@@ -8,7 +8,9 @@ class SimpleSpecificationSerializer(serializers.ModelSerializer):
 
 
 class SimpleGroupSerializer(serializers.ModelSerializer):
-    course_title = serializers.CharField(source='course.title', read_only=True)
+    course_title = serializers.CharField(
+        source='course.title', read_only=True, help_text='Наименование курса'
+    )
 
     class Meta:
         model = Group
@@ -16,7 +18,9 @@ class SimpleGroupSerializer(serializers.ModelSerializer):
 
 
 class SimpleEmployeeSerializer(serializers.ModelSerializer):
-    company_name = serializers.CharField(source='company.name', read_only=True)
+    company_name = serializers.CharField(
+        source='company.name', read_only=True, help_text='Наименование компании'
+    )
 
     class Meta:
         model = Employee
@@ -30,7 +34,9 @@ class SimpleCompanySerializer(serializers.ModelSerializer):
 
 
 class CompanySerializer(serializers.ModelSerializer):
-    specifications = SimpleSpecificationSerializer(read_only=True, many=True)
+    specifications = SimpleSpecificationSerializer(
+        read_only=True, many=True, help_text='Спецификации компании'
+    )
 
     class Meta:
         model = Company
@@ -42,7 +48,7 @@ class CompanySerializer(serializers.ModelSerializer):
         ]
 
     def validate_code(self, value):
-        """Проверка длины кода (п. 2.2.6.2 )"""
+        """Проверка длины кода (2.2.6.2)"""
         if not (2 <= len(value) <= 4):
             raise serializers.ValidationError("Код компании должен содержать от 2 до 4 символов.")
         return value.upper()
@@ -64,14 +70,16 @@ class CourseSerializer(serializers.ModelSerializer):
 
 
 class GroupSerializer(serializers.ModelSerializer):
-    course = CourseSerializer(read_only=True)
-    specification = SimpleSpecificationSerializer(read_only=True)
+    course = CourseSerializer(read_only=True, help_text='Курс')
+    specification = SimpleSpecificationSerializer(read_only=True, help_text='Спецификация')
 
     course_id = serializers.PrimaryKeyRelatedField(
-        queryset=Course.objects.all(), write_only=True, source='course'
+        queryset=Course.objects.all(), write_only=True, source='course',
+        help_text='ID курса'
     )
     specification_id = serializers.PrimaryKeyRelatedField(
-        queryset=Specification.objects.all(), write_only=True, source='specification'
+        queryset=Specification.objects.all(), write_only=True, source='specification',
+        help_text='ID спецификации'
     )
 
     class Meta:
@@ -100,11 +108,13 @@ class EmployeeSerializer(serializers.ModelSerializer):
     groups = SimpleGroupSerializer(source='enrolled_groups', read_only=True, many=True)
     
     assign_to_groups = serializers.ListField(
-        child=serializers.IntegerField(), write_only=True, required=False
+        child=serializers.IntegerField(), write_only=True, required=False,
+        help_text='Список ID групп, к которым пользователь присоединится после обновления/добавления записи'
     )
 
     company_id = serializers.PrimaryKeyRelatedField(
-        queryset=Company.objects.all(), write_only=True, source='company'
+        queryset=Company.objects.all(), write_only=True, source='company',
+        help_text='ID компании'
     )
 
     class Meta:
@@ -161,11 +171,12 @@ class EmployeeSerializer(serializers.ModelSerializer):
 
 
 class SpecificationSerializer(serializers.ModelSerializer):
-    company = SimpleCompanySerializer(read_only=True)
-    groups = SimpleGroupSerializer(many=True, read_only=True)
+    company = SimpleCompanySerializer(read_only=True, help_text='Компания')
+    groups = SimpleGroupSerializer(many=True, read_only=True, help_text='Группа')
     
     company_id = serializers.PrimaryKeyRelatedField(
-        queryset=Company.objects.all(), write_only=True, source='company'
+        queryset=Company.objects.all(), write_only=True, source='company',
+        help_text='ID компании за которой будет закреплена специализация'
     )
 
     class Meta:
@@ -185,10 +196,15 @@ class SpecificationSerializer(serializers.ModelSerializer):
 
 class GroupEmployeeSerializer(serializers.ModelSerializer):
     employee_id = serializers.PrimaryKeyRelatedField(
-        queryset=Employee.objects.all(), write_only=True, source='employee'
+        queryset=Employee.objects.all(), write_only=True, source='employee',
+        help_text='ID работника, который будет обновлен/удален'
     )
-    employee = SimpleEmployeeSerializer(read_only=True)
-    group = SimpleGroupSerializer(read_only=True)
+    employee = SimpleEmployeeSerializer(
+        read_only=True, help_text='Работник'
+    )
+    group = SimpleGroupSerializer(
+        read_only=True, help_text='Группа'
+    )
 
     class Meta:
         model = GroupEmployee
