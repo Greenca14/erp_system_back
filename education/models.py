@@ -78,11 +78,11 @@ class Group(models.Model):
 
     @property
     def employees_count(self):
-        return self.group_employees.count()
+        return self.group_membership.count()
 
     @property
     def average_progress(self):
-        return self.group_employees.aggregate(avg=Avg('progress_percent'))['avg'] or 0
+        return self.group_membership.aggregate(avg=Avg('progress_percent'))['avg'] or 0
 
     def save(self, *args, **kwargs):
         if not self.price_at_creation:

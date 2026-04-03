@@ -23,6 +23,12 @@ class SimpleEmployeeSerializer(serializers.ModelSerializer):
         fields = ['id', 'full_name', 'company_name', 'email']
 
 
+class SimpleCompanySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Company
+        fields = ['id', 'code', 'name']
+
+
 class CompanySerializer(serializers.ModelSerializer):
     specifications = SimpleSpecificationSerializer(read_only=True, many=True)
 
@@ -84,6 +90,9 @@ class GroupSerializer(serializers.ModelSerializer):
             'employees_count',
             'average_progress',
         ]
+        extra_kwargs = {
+            'price_at_creation': {'default': 0, 'read_only': True}
+        }
 
 
 class EmployeeSerializer(serializers.ModelSerializer):
@@ -119,14 +128,14 @@ class EmployeeSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Сотрудник с таким Email уже существует.")
         return value
         
-    def _handle_group_assignments(self, participant, group_ids):
+    def _handle_group_assignments(self, employee, group_ids):
         if not group_ids:
             return
         for group_id in group_ids:
             try:
                 group = Group.objects.get(id=group_id)
                 GroupEmployee.objects.get_or_create(
-                    participant=participant,
+                    employee=employee,
                     group=group,
                 )
             except Group.DoesNotExist:
@@ -152,7 +161,7 @@ class EmployeeSerializer(serializers.ModelSerializer):
 
 
 class SpecificationSerializer(serializers.ModelSerializer):
-    company = CompanySerializer(read_only=True)
+    company = SimpleCompanySerializer(read_only=True)
     groups = SimpleGroupSerializer(many=True, read_only=True)
     
     company_id = serializers.PrimaryKeyRelatedField(
@@ -175,9 +184,11 @@ class SpecificationSerializer(serializers.ModelSerializer):
 
 
 class GroupEmployeeSerializer(serializers.ModelSerializer):
-    employee_id = serializers.PrimaryKeyRelatedField(source='employee', queryset=Employee.objects.all())
-    employee = SimpleEmployeeSerializer(source='employee', read_only=True)
-    group = SimpleGroupSerializer(source='group', read_only=True)
+    employee_id = serializers.PrimaryKeyRelatedField(
+        queryset=Employee.objects.all(), write_only=True, source='employee'
+    )
+    employee = SimpleEmployeeSerializer(read_only=True)
+    group = SimpleGroupSerializer(read_only=True)
 
     class Meta:
         model = GroupEmployee

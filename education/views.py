@@ -7,7 +7,7 @@ from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 
 class EmployeeViewSet(viewsets.ModelViewSet):
-    queryset = Employee.objects.all().select_related('company').prefetch_related('group')
+    queryset = Employee.objects.all().select_related('company')
     serializer_class = EmployeeSerializer
 
 
@@ -27,7 +27,7 @@ class SpecificationViewSet(viewsets.ModelViewSet):
 
 
 class GroupViewSet(viewsets.ModelViewSet):
-    queryset = Group.objects.all().select_related('course').select_related('specification').prefetch_related('employee')
+    queryset = Group.objects.all().select_related('course').select_related('specification')
     serializer_class = GroupSerializer
 
 
