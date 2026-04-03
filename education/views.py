@@ -8,7 +8,8 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 from rest_framework.parsers import MultiPartParser, FormParser
-from .services import run_xml_import
+from .services import run_xml_import, export_employee_to_xml, export_course_to_xml
+from django.http import HttpResponse
 
 @extend_schema(
     tags=['Участник обучения - Employee']
@@ -179,3 +180,24 @@ class XMLUploadView(APIView):
             
         except Exception as e:
             return Response({"error": f"Ошибка сервера: {str(e)}"}, status=500)
+        
+class XMLExportView(APIView):
+    """API для выгрузки XML данных"""
+    
+    def get(self, request, model_type, obj_id):
+        try:
+            if model_type == 'employee':
+                xml_data = export_employee_to_xml(obj_id)
+                filename = f"employee_{obj_id}.xml"
+            elif model_type == 'course':
+                xml_data = export_course_to_xml(obj_id)
+                filename = f"course_{obj_id}.xml"
+            else:
+                return HttpResponse("Неверный тип модели", status=400)
+
+            response = HttpResponse(xml_data, content_type='application/xml')
+            response['Content-Disposition'] = f'attachment; filename="{filename}"'
+            return response
+            
+        except Exception as e:
+            return HttpResponse(f"Ошибка при экспорте: {str(e)}", status=404)
