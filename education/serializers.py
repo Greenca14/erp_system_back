@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Participant, Company
+from .models import Participant, Company, Course
 
 class ParticipantSerializer(serializers.ModelSerializer):
     company_name = serializers.ReadOnlyField(source='company.name')
@@ -27,4 +27,18 @@ class ParticipantSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Сотрудник с таким Email уже существует.")
         return value
     
-    
+
+class CourseSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Course
+        fields = [
+            'id',            # 1. CourseID
+            'title',         # 2. Название курса
+            'description',   # 3. Описание курса
+            'duration_days', # 4. Длительность в днях
+            'price_per_person' # 5. Цена за человека
+        ]
+        # Делаем описание необязательным, как в ТЗ
+        extra_kwargs = {
+            'description': {'required': False, 'allow_blank': True}
+        }
