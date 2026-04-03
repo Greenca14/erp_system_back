@@ -11,6 +11,7 @@ router.register(r'groups', GroupViewSet, basename='group')
 
 urlpatterns = [
     path('upload-xml/', XMLUploadView.as_view(), name='xml-upload'),
+    path('export-xml/<str:model_type>/<int:obj_id>/', XMLExportView.as_view(), name='xml-export'),
     
     path('', include(router.urls)),
 
