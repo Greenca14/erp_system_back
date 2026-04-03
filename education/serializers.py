@@ -10,12 +10,12 @@ class ParticipantSerializer(serializers.ModelSerializer):
     class Meta:
         model = Participant
         fields = [
-            'id',               # 1. EmployeeID
-            'full_name',        # 2. ФИО
-            'company',          # 3. Компания (ID для записи)
-            'company_name',     # 3. Компания (Название для чтения)
-            'email',            # 4. Email
-            'learning_groups'   # 5. Группы обучения
+            'id',
+            'full_name',
+            'company',
+            'company_name',
+            'email',
+            'learning_groups'
         ]
 
     def validate_email(self, value):
@@ -36,7 +36,7 @@ class CourseSerializer(serializers.ModelSerializer):
             'title',         # 2. Название курса
             'description',   # 3. Описание курса
             'duration_days', # 4. Длительность в днях
-            'price_per_person' # 5. Цена за человека
+            'base_price'     # 5. Цена за человека
         ]
         extra_kwargs = {
             'description': {'required': False, 'allow_blank': True}
@@ -45,7 +45,7 @@ class CourseSerializer(serializers.ModelSerializer):
 
 class CompanySerializer(serializers.ModelSerializer):
     class Meta:
-        model = Course
+        model = Company
         fields = [
             'id',            # 1. CourseID
             'code',         # 2. Код компании
@@ -57,45 +57,40 @@ class CompanySerializer(serializers.ModelSerializer):
             if not (2 <= len(value) <= 4):
                 raise serializers.ValidationError("Код компании должен содержать от 2 до 4 символов.")
             return value.upper()
-        
+
+class StudyGroupSerializer(serializers.ModelSerializer):
+    course = CourseSerializer(read_only=True)
+
+    course_id = serializers.PrimaryKeyRelatedField(
+        queryset=Course.objects.all(), write_only=True, source='course'
+    )
+
+    class Meta:
+        model = StudyGroup
+        fields = [
+            'id',
+            'course',
+            'course_id',
+            'start_date',
+            'end_date',
+            'participants_count',
+            'average_progress',
+            'total_cost',
+        ]
+
 class SpecificationSerializer(serializers.ModelSerializer):
-    
-    company_name = serializers.ReadOnlyField(source='company.name')
-
-    group_info = serializers.SerializerMethodField()
-
-    total_amount_no_vat = serializers.SerializerMethodField()
-    vat_amount = serializers.SerializerMethodField()
-    total_with_vat = serializers.SerializerMethodField()
+    company = CompanySerializer(read_only=True)
+    groups = StudyGroupSerializer(many=True, read_only=True)
 
     class Meta:
         model = Specification
         fields = [
-            'id',                   # 1. DocumentID
-            'date',                 # 2. Дата
-            'number',               # 3. Номер
-            'company',              # 4. Компания (ID)
-            'company_name',         # 4. Название компании
-            'study_groups',         # 5. Группы (ID для записи)
-            'group_numbers',        # 5. Номера групп (для чтения)
-            'total_amount_no_vat',  # 6. Сумма без НДС
-            'vat_amount',           # 7. НДС (22%)
-            'total_with_vat'        # 8. Итого с НДС
+            'id',
+            'date',
+            'number',
+            'company',
+            'groups',
+            'total_no_vat',
+            'vat_amount',
+            'total_with_vat'
         ]
-
-    def get_group_info(self, obj):
-        return [group.course.title for group in obj.study_groups.all()]
-
-    def get_total_amount_no_vat(self, obj):
-        total = sum(group.total_group_cost for group in obj.study_groups.all())
-        return round(total, 2)
-
-    def get_vat_amount(self, obj):
-        total_no_vat = Decimal(str(self.get_total_amount_no_vat(obj)))
-        vat = total_no_vat * Decimal('0.22')
-        return round(vat, 2)
-
-    def get_total_with_vat(self, obj):
-        total_no_vat = Decimal(str(self.get_total_amount_no_vat(obj)))
-        vat = Decimal(str(self.get_vat_amount(obj)))
-        return round(total_no_vat + vat, 2)
