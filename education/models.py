@@ -15,25 +15,6 @@ class Company(models.Model):
         return f"{self.code} | {self.name}"
 
 
-class Employee(models.Model):
-    """2.2.1 Участник обучения"""
-    full_name = models.CharField(max_length=255, verbose_name="ФИО")
-    company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name='employees', verbose_name="Компания")
-    email = models.EmailField(unique=True, verbose_name="Email")
-
-    groups = models.ManyToManyField(
-        'StudyGroup', 
-        related_name='study_groups'
-    )
-
-    class Meta:
-        verbose_name = "Участник обучения"
-        verbose_name_plural = "Участники обучения"
-
-    def __str__(self):
-        return self.full_name
-
-
 class Course(models.Model):
     """2.2.2 Kypc обучения"""
     title = models.CharField(max_length=255, verbose_name="Название курса")
@@ -76,7 +57,7 @@ class Specification(models.Model):
     def __str__(self):
         return f"Спец. №{self.number} от {self.date}"
 
-class StudyGroup(models.Model):
+class Group(models.Model):
     """2.2.3 Учебная группа"""
     STATUS_CHOICES = [
         ('planned', 'Планируется'),
@@ -86,6 +67,7 @@ class StudyGroup(models.Model):
 
     course = models.ForeignKey(Course, on_delete=models.PROTECT, related_name='groups', verbose_name="Kypc")
     specification = models.ForeignKey(Specification, on_delete=models.CASCADE, related_name='groups', verbose_name="Спецификация")
+    employees = models.ManyToManyField('Employee', related_name='enrolled_groups', through='GroupEmployee')
     start_date = models.DateField(verbose_name="Дата начала")
     end_date = models.DateField(verbose_name="Дата окончания")
     
@@ -95,19 +77,19 @@ class StudyGroup(models.Model):
     total_cost = models.DecimalField(max_digits=15, decimal_places=2, default=0, verbose_name="Стоимость за группу")
 
     @property
-    def participants_count(self):
-        return self.group_participants.count()
+    def employees_count(self):
+        return self.group_employees.count()
 
     @property
     def average_progress(self):
-        return self.group_participants.aggregate(avg=Avg('progress_percent'))['avg'] or 0
+        return self.group_employees.aggregate(avg=Avg('progress_percent'))['avg'] or 0
 
     def save(self, *args, **kwargs):
         if not self.price_at_creation:
             self.price_at_creation = self.course.base_price
         
         if self.pk:
-            self.total_cost = self.price_at_creation * self.participants_count
+            self.total_cost = self.price_at_creation * self.employees_count
         else:
             self.total_cost = 0
         
@@ -117,10 +99,25 @@ class StudyGroup(models.Model):
         verbose_name = "Учебная группа"
         verbose_name_plural = "Учебные группы"
 
-class GroupParticipant(models.Model):
+
+class Employee(models.Model):
+    """2.2.1 Участник обучения"""
+    full_name = models.CharField(max_length=255, verbose_name="ФИО")
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name='employees', verbose_name="Компания")
+    email = models.EmailField(unique=True, verbose_name="Email")
+
+    class Meta:
+        verbose_name = "Участник обучения"
+        verbose_name_plural = "Участники обучения"
+
+    def __str__(self):
+        return self.full_name
+
+
+class GroupEmployee(models.Model):
     """2.2.4 Участник группы"""
-    group = models.ForeignKey(StudyGroup, on_delete=models.CASCADE, related_name='group_participants', verbose_name="Группа")
-    participant = models.ForeignKey(Employee, on_delete=models.CASCADE, related_name='participants_group', verbose_name="Сотрудник")
+    group = models.ForeignKey(Group, on_delete=models.CASCADE, related_name='group_membership', verbose_name="Группа")
+    employee = models.ForeignKey(Employee, on_delete=models.CASCADE, related_name='employee_membership', verbose_name="Сотрудник")
     progress_percent = models.PositiveIntegerField(
         default=0, 
         validators=[MinValueValidator(0), MaxValueValidator(100)],
@@ -128,6 +125,6 @@ class GroupParticipant(models.Model):
     )
 
     class Meta:
-        unique_together = ('group', 'participant')
+        unique_together = ('group', 'employee')
         verbose_name = "Участник группы"
         verbose_name_plural = "Детализация групп"

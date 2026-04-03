@@ -1,15 +1,38 @@
 from rest_framework import serializers
-from .models import Employee, Company, Course, Specification, StudyGroup, GroupParticipant
-from decimal import Decimal
+from .models import Employee, Company, Course, Specification, Group, GroupEmployee
+
+class SimpleSpecificationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Specification
+        fields = ['id', 'date', 'number']
+
+
+class SimpleGroupSerializer(serializers.ModelSerializer):
+    course_title = serializers.CharField(source='course.title', read_only=True)
+
+    class Meta:
+        model = Group
+        fields = ['id', 'course_title', 'start_date', 'end_date', 'status']
+
+
+class SimpleEmployeeSerializer(serializers.ModelSerializer):
+    company_name = serializers.CharField(source='company.name', read_only=True)
+
+    class Meta:
+        model = Employee
+        fields = ['id', 'full_name', 'company_name', 'email']
 
 
 class CompanySerializer(serializers.ModelSerializer):
+    specifications = SimpleSpecificationSerializer(read_only=True, many=True)
+
     class Meta:
         model = Company
         fields = [
             'id',        
-            'code',       
+            'code',
             'name',
+            'specifications'
         ]
 
     def validate_code(self, value):
@@ -17,76 +40,6 @@ class CompanySerializer(serializers.ModelSerializer):
         if not (2 <= len(value) <= 4):
             raise serializers.ValidationError("Код компании должен содержать от 2 до 4 символов.")
         return value.upper()
-    
-
-class ParticipantSerializer(serializers.ModelSerializer):
-    company = CompanySerializer(read_only=True)
-    groups = serializers.SerializerMethodField()
-    
-    assign_to_groups = serializers.ListField(
-        child=serializers.IntegerField(), write_only=True, required=False
-    )
-
-    company_id = serializers.IntegerField(write_only=True)
-
-    class Meta:
-        model = Employee
-        fields = [
-            'id',
-            'full_name',
-            'email',
-            'company',
-            'groups',
-            'assign_to_groups',
-            'company_id'
-        ]
-
-    def validate_email(self, value):
-        existing = Employee.objects.filter(email=value)
-        if self.instance:
-            existing = existing.exclude(pk=self.instance.pk)
-        
-        if existing.exists():
-            raise serializers.ValidationError("Сотрудник с таким Email уже существует.")
-        return value
-    
-    def get_groups(self, participant):
-        group_participations = GroupParticipant.objects.filter(participant=participant)
-        groups = [gp.group for gp in group_participations]
-        serializer = StudyGroupSerializer(groups, many=True)
-        return serializer.data
-        
-    def _handle_group_assignments(self, participant, group_ids):
-        if not group_ids:
-            return
-
-        for group_id in group_ids:
-            try:
-                group = StudyGroup.objects.get(id=group_id)
-                GroupParticipant.objects.get_or_create(
-                    participant=participant,
-                    group=group,
-                )
-            except StudyGroup.DoesNotExist:
-                print(f"Группа с ID {group_id} не найдена.")
-
-    def create(self, validated_data):
-        group_ids = validated_data.pop('assign_to_groups', [])
-        participant = Employee.objects.create(**validated_data)
-        
-        if group_ids is not None:
-            self._handle_group_assignments(participant, group_ids)
-        
-        return participant
-
-    def update(self, instance, validated_data):
-        group_ids = validated_data.pop('assign_to_groups', None)
-        participant = super().update(instance, validated_data)
-
-        if group_ids is not None:
-            self._handle_group_assignments(participant, group_ids)
-
-        return participant
     
 
 class CourseSerializer(serializers.ModelSerializer):
@@ -104,19 +57,9 @@ class CourseSerializer(serializers.ModelSerializer):
         }
 
 
-class SpecificationShortSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Specification
-        fields = [
-            'id',
-            'date',
-            'number',
-        ]
-
-
-class StudyGroupSerializer(serializers.ModelSerializer):
+class GroupSerializer(serializers.ModelSerializer):
     course = CourseSerializer(read_only=True)
-    specification = SpecificationShortSerializer(read_only=True)
+    specification = SimpleSpecificationSerializer(read_only=True)
 
     course_id = serializers.PrimaryKeyRelatedField(
         queryset=Course.objects.all(), write_only=True, source='course'
@@ -126,7 +69,7 @@ class StudyGroupSerializer(serializers.ModelSerializer):
     )
 
     class Meta:
-        model = StudyGroup
+        model = Group
         fields = [
             'id',
             'course',
@@ -137,15 +80,84 @@ class StudyGroupSerializer(serializers.ModelSerializer):
             'end_date',
             'price_at_creation',
             'status',
-            'participants_count',
-            'average_progress',
             'total_cost',
+            'employees_count',
+            'average_progress',
         ]
+
+
+class EmployeeSerializer(serializers.ModelSerializer):
+    company = CompanySerializer(read_only=True)
+    groups = SimpleGroupSerializer(source='enrolled_groups', read_only=True, many=True)
+    
+    assign_to_groups = serializers.ListField(
+        child=serializers.IntegerField(), write_only=True, required=False
+    )
+
+    company_id = serializers.PrimaryKeyRelatedField(
+        queryset=Company.objects.all(), write_only=True, source='company'
+    )
+
+    class Meta:
+        model = Employee
+        fields = [
+            'id',
+            'full_name',
+            'company',
+            'company_id',
+            'email',
+            'groups',
+            'assign_to_groups'
+        ]
+
+    def validate_email(self, value):
+        existing = Employee.objects.filter(email=value)
+        if self.instance:
+            existing = existing.exclude(pk=self.instance.pk)
+        
+        if existing.exists():
+            raise serializers.ValidationError("Сотрудник с таким Email уже существует.")
+        return value
+        
+    def _handle_group_assignments(self, participant, group_ids):
+        if not group_ids:
+            return
+        for group_id in group_ids:
+            try:
+                group = Group.objects.get(id=group_id)
+                GroupEmployee.objects.get_or_create(
+                    participant=participant,
+                    group=group,
+                )
+            except Group.DoesNotExist:
+                print(f"Группа с ID {group_id} не найдена.")
+
+    def create(self, validated_data):
+        group_ids = validated_data.pop('assign_to_groups', [])
+        employee = Employee.objects.create(**validated_data)
+        
+        if group_ids is not None:
+            self._handle_group_assignments(employee, group_ids)
+        
+        return employee
+
+    def update(self, instance, validated_data):
+        group_ids = validated_data.pop('assign_to_groups', None)
+        employee = super().update(instance, validated_data)
+
+        if group_ids is not None:
+            self._handle_group_assignments(employee, group_ids)
+
+        return employee
 
 
 class SpecificationSerializer(serializers.ModelSerializer):
     company = CompanySerializer(read_only=True)
-    groups = StudyGroupSerializer(many=True, read_only=True)
+    groups = SimpleGroupSerializer(many=True, read_only=True)
+    
+    company_id = serializers.PrimaryKeyRelatedField(
+        queryset=Company.objects.all(), write_only=True, source='company'
+    )
 
     class Meta:
         model = Specification
@@ -154,6 +166,7 @@ class SpecificationSerializer(serializers.ModelSerializer):
             'date',
             'number',
             'company',
+            'company_id',
             'groups',
             'total_no_vat',
             'vat_amount',
@@ -161,13 +174,17 @@ class SpecificationSerializer(serializers.ModelSerializer):
         ]
 
 
-class GroupParticipantSerializer(serializers.ModelSerializer):
-    participant = ParticipantSerializer(read_only=True)
+class GroupEmployeeSerializer(serializers.ModelSerializer):
+    employee_id = serializers.PrimaryKeyRelatedField(source='employee', queryset=Employee.objects.all())
+    employee = SimpleEmployeeSerializer(source='employee', read_only=True)
+    group = SimpleGroupSerializer(source='group', read_only=True)
 
     class Meta:
-        model = GroupParticipant
+        model = GroupEmployee
         fields = [
             'id', 
-            'participant',
+            'group',
+            'employee',
+            'employee_id',
             'progress_percent'
         ]
