@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from rest_framework import viewsets, filters
-from .models import Participant, Course, Company
-from .serializers import ParticipantSerializer, CourseSerializer, CompanySerializer 
+from .models import Participant, Course, Company, Specification
+from .serializers import ParticipantSerializer, CourseSerializer, CompanySerializer, SpecificationSerializer
 
 class ParticipantViewSet(viewsets.ModelViewSet):
     """
@@ -26,7 +26,7 @@ class CourseViewSet(viewsets.ModelViewSet):
     filter_backends = [filters.SearchFilter]
     search_fields = ['title']
 
-class CompanySerializer(viewsets.ModelViewSet):
+class CompanyViewSet(viewsets.ModelViewSet):
     """
     CRUD для Компаний (п. 2.2.6).
     """
@@ -36,3 +36,13 @@ class CompanySerializer(viewsets.ModelViewSet):
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
     search_fields = ['name', 'code']
     ordering_fields = ['name']
+
+class SpecificationViewSet(viewsets.ModelViewSet):
+    """
+    CRUD для Спецификаций (п. 2.2.5).
+    """
+    queryset = Specification.objects.all().select_related('company').prefetch_related('study_groups__course')
+    serializer_class = SpecificationSerializer
+
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
+    search_fields = ['number', 'company__name']

@@ -1,5 +1,6 @@
 from rest_framework import serializers
-from .models import Participant, Company, Course
+from .models import Participant, Company, Course, Specification, StudyGroup
+from decimal import Decimal
 
 class ParticipantSerializer(serializers.ModelSerializer):
     company_name = serializers.ReadOnlyField(source='company.name')
@@ -18,7 +19,6 @@ class ParticipantSerializer(serializers.ModelSerializer):
         ]
 
     def validate_email(self, value):
-        """Проверка на дубли (п. 2.2.1)"""
         existing = Participant.objects.filter(email=value)
         if self.instance:
             existing = existing.exclude(pk=self.instance.pk)
@@ -57,3 +57,45 @@ class CompanySerializer(serializers.ModelSerializer):
             if not (2 <= len(value) <= 4):
                 raise serializers.ValidationError("Код компании должен содержать от 2 до 4 символов.")
             return value.upper()
+        
+class SpecificationSerializer(serializers.ModelSerializer):
+    
+    company_name = serializers.ReadOnlyField(source='company.name')
+
+    group_info = serializers.SerializerMethodField()
+
+    total_amount_no_vat = serializers.SerializerMethodField()
+    vat_amount = serializers.SerializerMethodField()
+    total_with_vat = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Specification
+        fields = [
+            'id',                   # 1. DocumentID
+            'date',                 # 2. Дата
+            'number',               # 3. Номер
+            'company',              # 4. Компания (ID)
+            'company_name',         # 4. Название компании
+            'study_groups',         # 5. Группы (ID для записи)
+            'group_numbers',        # 5. Номера групп (для чтения)
+            'total_amount_no_vat',  # 6. Сумма без НДС
+            'vat_amount',           # 7. НДС (22%)
+            'total_with_vat'        # 8. Итого с НДС
+        ]
+
+    def get_group_info(self, obj):
+        return [group.course.title for group in obj.study_groups.all()]
+
+    def get_total_amount_no_vat(self, obj):
+        total = sum(group.total_group_cost for group in obj.study_groups.all())
+        return round(total, 2)
+
+    def get_vat_amount(self, obj):
+        total_no_vat = Decimal(str(self.get_total_amount_no_vat(obj)))
+        vat = total_no_vat * Decimal('0.22')
+        return round(vat, 2)
+
+    def get_total_with_vat(self, obj):
+        total_no_vat = Decimal(str(self.get_total_amount_no_vat(obj)))
+        vat = Decimal(str(self.get_vat_amount(obj)))
+        return round(total_no_vat + vat, 2)
