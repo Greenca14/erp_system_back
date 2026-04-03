@@ -10,7 +10,7 @@ class ParticipantViewSet(viewsets.ModelViewSet):
     """
     CRUD для Сотрудников (п. 2.2.1).
     """
-    queryset = Participant.objects.all().select_related('company')
+    queryset = Employee.objects.all().select_related('company')
     serializer_class = ParticipantSerializer
 
 
@@ -48,8 +48,8 @@ class StudyGroupViewSet(viewsets.ModelViewSet):
 
 class GroupParticipantList(APIView):
     def get(self, request, group_id):
-        participants = GroupParticipant.objects.filter(group_id=group_id)
-        serializer = GroupParticipantSerializer(participants, many=True)
+        participant = GroupParticipant.objects.filter(group_id=group_id)
+        serializer = GroupParticipantSerializer(participant, many=True)
         return Response(serializer.data)
 
     def post(self, request, group_id):
