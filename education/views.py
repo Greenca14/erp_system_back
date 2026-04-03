@@ -3,6 +3,7 @@ from django.shortcuts import render
 from drf_spectacular.utils import extend_schema, extend_schema_view, inline_serializer
 from rest_framework import viewsets, status
 from rest_framework.generics import GenericAPIView
+from rest_framework import viewsets, status, filters
 from .models import *
 from .serializers import *
 from rest_framework.views import APIView
@@ -11,6 +12,8 @@ from django.shortcuts import get_object_or_404
 from rest_framework.parsers import MultiPartParser, FormParser
 from .services import run_xml_import, export_employee_to_xml, export_course_to_xml
 from django.http import HttpResponse
+from datetime import timedelta
+from django.db.models import Min, Max, Avg
 
 @extend_schema(
     tags=['Участник обучения - Employee']
@@ -19,6 +22,9 @@ class EmployeeViewSet(viewsets.ModelViewSet):
     queryset = Employee.objects.all().select_related('company')
     serializer_class = EmployeeSerializer
 
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
+    search_fields = ['full_name', 'email']
+    ordering_fields = ['id', 'full_name']
 
 @extend_schema(
     tags=['Курс обучения - Course'],
@@ -27,6 +33,8 @@ class CourseViewSet(viewsets.ModelViewSet):
     queryset = Course.objects.all()
     serializer_class = CourseSerializer
 
+    filter_backends = [filters.SearchFilter]
+    search_fields = ['title']
 
 @extend_schema(
     tags=['Компания - Company']
@@ -35,6 +43,9 @@ class CompanyViewSet(viewsets.ModelViewSet):
     queryset = Company.objects.all()
     serializer_class = CompanySerializer
 
+    search_fields = ['name', 'code']
+    ordering_fields = ['id', 'name', 'code']
+
 
 @extend_schema(
     tags=['Спецификация - Specification']
@@ -42,7 +53,11 @@ class CompanyViewSet(viewsets.ModelViewSet):
 class SpecificationViewSet(viewsets.ModelViewSet):
     queryset = Specification.objects.all().select_related('company')
     serializer_class = SpecificationSerializer
-
+    
+    filter_backends = ['company', 'date']
+    search_fields = ['number', 'company__name']
+    ordering_fields = ['id', 'date', 'number', 'total_with_vat']
+    
 
 @extend_schema(
     tags=['Учебная группа - Group']
@@ -51,6 +66,9 @@ class GroupViewSet(viewsets.ModelViewSet):
     queryset = Group.objects.all().select_related('course').select_related('specification')
     serializer_class = GroupSerializer
 
+    filter_backends = ['status', 'course', 'specification']
+    search_fields = ['course__title', 'specification__number']
+    ordering_fields = ['id', 'start_date', 'end_date', 'status', 'average_progress']
 
 @extend_schema(
     tags=['Участники группы - Group Employees']
@@ -225,3 +243,31 @@ class XMLExportView(GenericAPIView):
             
         except Exception as e:
             return HttpResponse(f"Ошибка при экспорте: {str(e)}", status=404)
+        
+class GanttChartDataView(APIView):
+
+    def get(self, request):
+        groups_qs = Group.objects.all()
+        
+        if not groups_qs.exists():
+            return Response({
+                "min_date": None,
+                "max_date": None,
+                "groups": []
+            })
+
+        aggr = groups_qs.aggregate(
+            first_start=Min('start_date'),
+            last_end=Max('end_date')
+        )
+
+        min_date = aggr['first_start'] - timedelta(days=3) if aggr['first_start'] else None
+        max_date = aggr['last_end'] + timedelta(days=3) if aggr['last_end'] else None
+
+        serializer = GroupSerializer(groups_qs, many=True)
+
+        return Response({
+            "min_date": min_date,
+            "max_date": max_date,
+            "groups": serializer.data
+        })
