@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from rest_framework import viewsets, filters
-from .models import Participant, Course, Company, Specification, StudyGroup
-from .serializers import ParticipantSerializer, CourseSerializer, CompanySerializer, SpecificationSerializer, StudyGroupSerializer
+from .models import Participant, Course, Company, Specification, StudyGroup, GroupParticipant
+from .serializers import ParticipantSerializer, CourseSerializer, CompanySerializer, SpecificationSerializer, StudyGroupSerializer, GroupParticipantSerializer
 
 class ParticipantViewSet(viewsets.ModelViewSet):
     """
@@ -48,5 +48,15 @@ class SpecificationViewSet(viewsets.ModelViewSet):
     search_fields = ['number', 'company__name']
 
 class StudyGroupViewSet(viewsets.ModelViewSet):
+    """
+    CRUD для Спецификаций (п. 2.2.3).
+    """
     queryset = StudyGroup.objects.select_related('course').all()
     serializer_class = StudyGroupSerializer
+
+class GroupParticipantViewSet(viewsets.ModelViewSet):
+    """
+    CRUD для Участника группы (п. 2.2.4).
+    """
+    queryset = GroupParticipant.objects.all()
+    serializer_class = GroupParticipantSerializer
