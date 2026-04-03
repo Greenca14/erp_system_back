@@ -1,3 +1,4 @@
+import threading
 from django.shortcuts import render
 from rest_framework import viewsets, status
 from .models import *
@@ -5,6 +6,8 @@ from .serializers import *
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
+from rest_framework.parsers import MultiPartParser, FormParser
+from .services import run_xml_import
 
 class EmployeeViewSet(viewsets.ModelViewSet):
     queryset = Employee.objects.all().select_related('company')
@@ -94,3 +97,39 @@ class GroupEmployeeViewSet(viewsets.ModelViewSet):
         membership = self.get_object()
         membership.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+    
+class XMLUploadView(APIView):
+    """
+    API для асинхронной загрузки данных из Global ERP через XML.
+    """
+    parser_classes = [MultiPartParser, FormParser]
+
+    def post(self, request):
+        file_obj = request.FILES.get('file')
+        
+        if not file_obj:
+            return Response(
+                {"error": "Файл не найден. Используйте ключ 'file' в form-data."}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Минимальная валидация
+        if not file_obj.name.endswith('.xml'):
+            return Response({"error": "Допускаются только XML файлы."}, status=400)
+
+        try:
+            # Читаем контент сразу
+            file_content = file_obj.read()
+            
+            # Асинхронный запуск 
+            thread = threading.Thread(target=run_xml_import, args=(file_content,))
+            thread.daemon = True
+            thread.start()
+            
+            return Response({
+                "status": "success",
+                "message": f"Файл {file_obj.name} принят и обрабатывается в фоне."
+            }, status=status.HTTP_202_ACCEPTED)
+            
+        except Exception as e:
+            return Response({"error": f"Ошибка сервера: {str(e)}"}, status=500)

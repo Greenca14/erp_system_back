@@ -10,7 +10,8 @@ router.register(r'specifications', SpecificationViewSet, basename='specification
 router.register(r'groups', GroupViewSet, basename='group')
 
 urlpatterns = [
-
+    path('upload-xml/', XMLUploadView.as_view(), name='xml-upload'),
+    
     path('', include(router.urls)),
 
     path('groups/<int:group_id>/employee/',

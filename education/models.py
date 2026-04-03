@@ -80,8 +80,10 @@ class Group(models.Model):
     def employees_count(self):
         return self.group_membership.count()
 
+    
     @property
     def average_progress(self):
+        """Расчет среднего прогресса обучения по группе"""
         return self.group_membership.aggregate(avg=Avg('progress_percent'))['avg'] or 0
 
     def save(self, *args, **kwargs):
