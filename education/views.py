@@ -1,7 +1,10 @@
 from django.shortcuts import render
-from rest_framework import viewsets, filters
-from .models import Participant, Course, Company, Specification, StudyGroup, GroupParticipant
-from .serializers import ParticipantSerializer, CourseSerializer, CompanySerializer, SpecificationSerializer, StudyGroupSerializer, GroupParticipantSerializer
+from rest_framework import viewsets, status
+from .models import *
+from .serializers import *
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from django.shortcuts import get_object_or_404
 
 class ParticipantViewSet(viewsets.ModelViewSet):
     """
@@ -9,11 +12,6 @@ class ParticipantViewSet(viewsets.ModelViewSet):
     """
     queryset = Participant.objects.all().select_related('company')
     serializer_class = ParticipantSerializer
-    
-    # Добавим поиск и фильтрацию  XDDD
-    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
-    search_fields = ['full_name', 'email'] 
-    ordering_fields = ['id', 'full_name']  
 
 
 class CourseViewSet(viewsets.ModelViewSet):
@@ -23,8 +21,6 @@ class CourseViewSet(viewsets.ModelViewSet):
     queryset = Course.objects.all()
     serializer_class = CourseSerializer
 
-    filter_backends = [filters.SearchFilter]
-    search_fields = ['title']
 
 class CompanyViewSet(viewsets.ModelViewSet):
     """
@@ -33,9 +29,6 @@ class CompanyViewSet(viewsets.ModelViewSet):
     queryset = Company.objects.all()
     serializer_class = CompanySerializer
 
-    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
-    search_fields = ['name', 'code']
-    ordering_fields = ['name']
 
 class SpecificationViewSet(viewsets.ModelViewSet):
     """
@@ -44,8 +37,6 @@ class SpecificationViewSet(viewsets.ModelViewSet):
     queryset = Specification.objects.all().select_related('company').prefetch_related('groups__course')
     serializer_class = SpecificationSerializer
 
-    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
-    search_fields = ['number', 'company__name']
 
 class StudyGroupViewSet(viewsets.ModelViewSet):
     """
@@ -54,9 +45,31 @@ class StudyGroupViewSet(viewsets.ModelViewSet):
     queryset = StudyGroup.objects.select_related('course').all()
     serializer_class = StudyGroupSerializer
 
-class GroupParticipantViewSet(viewsets.ModelViewSet):
-    """
-    CRUD для Участника группы (п. 2.2.4).
-    """
-    queryset = GroupParticipant.objects.all()
-    serializer_class = GroupParticipantSerializer
+
+class GroupParticipantList(APIView):
+    def get(self, request, group_id):
+        participants = GroupParticipant.objects.filter(group_id=group_id)
+        serializer = GroupParticipantSerializer(participants, many=True)
+        return Response(serializer.data)
+
+    def post(self, request, group_id):
+        group = get_object_or_404(StudyGroup, id=group_id)
+        serializer = GroupParticipantSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save(group=group)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class GroupParticipantDetail(APIView):
+    def patch(self, request, group_id, id):
+        entry = get_object_or_404(GroupParticipant, id=id, group_id=group_id)
+        serializer = GroupParticipantSerializer(entry, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, group_id, id):
+        entry = get_object_or_404(GroupParticipant, id=id, group_id=group_id)
+        entry.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)

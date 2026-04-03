@@ -118,11 +118,13 @@ class SpecificationSerializer(serializers.ModelSerializer):
         ]
 
 class GroupParticipantSerializer(serializers.ModelSerializer):
+    participant_name = serializers.ReadOnlyField(source='participant.full_name')
+
     class Meta:
-            model = GroupParticipant
-            fields = [
-                'id',
-                'group',
-                'participant',
-                'progress_percent',
-            ]
+        model = GroupParticipant
+        fields = [
+            'id', 
+            'participant',      
+            'participant_name', 
+            'progress_percent'
+        ]
