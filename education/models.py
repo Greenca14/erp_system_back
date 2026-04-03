@@ -1,6 +1,7 @@
 from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db.models import Sum, Avg
+from drf_spectacular.utils import extend_schema
 
 class Company(models.Model):
     """2.2.6 Компания"""
@@ -36,17 +37,17 @@ class Specification(models.Model):
     company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name='specifications', verbose_name="Компания-заказчик")
 
     @property
-    def total_no_vat(self):
+    def total_no_vat(self) -> float:
         """Сумма всех групп без НДС (2.2.5.6)"""
         return self.groups.aggregate(total=Sum('total_cost'))['total'] or 0
 
     @property
-    def vat_amount(self):
+    def vat_amount(self) -> float:
         """НДС 22% (2.2.5.7)"""
         return float(self.total_no_vat) * 0.22
 
     @property
-    def total_with_vat(self):
+    def total_with_vat(self) -> float:
         """Итого с НДС (2.2.5.8)"""
         return float(self.total_no_vat) + self.vat_amount
 
@@ -77,12 +78,12 @@ class Group(models.Model):
     total_cost = models.DecimalField(max_digits=15, decimal_places=2, default=0, verbose_name="Стоимость за группу")
 
     @property
-    def employees_count(self):
+    def employees_count(self) -> int:
         return self.group_membership.count()
 
     
     @property
-    def average_progress(self):
+    def average_progress(self) -> int:
         """Расчет среднего прогресса обучения по группе"""
         return self.group_membership.aggregate(avg=Avg('progress_percent'))['avg'] or 0
 
