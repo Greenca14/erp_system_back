@@ -1,12 +1,9 @@
 import threading
 from django.shortcuts import render
-<<<<<<< HEAD
 from drf_spectacular.utils import extend_schema, extend_schema_view, inline_serializer
 from rest_framework import viewsets, status
 from rest_framework.generics import GenericAPIView
-=======
 from rest_framework import viewsets, status, filters
->>>>>>> 4be82c2 (Add ordering and search)
 from .models import *
 from .serializers import *
 from rest_framework.views import APIView
