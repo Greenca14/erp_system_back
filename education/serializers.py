@@ -38,7 +38,22 @@ class CourseSerializer(serializers.ModelSerializer):
             'duration_days', # 4. Длительность в днях
             'price_per_person' # 5. Цена за человека
         ]
-        # Делаем описание необязательным, как в ТЗ
         extra_kwargs = {
             'description': {'required': False, 'allow_blank': True}
         }
+
+
+class CompanySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Course
+        fields = [
+            'id',            # 1. CourseID
+            'code',         # 2. Код компании
+            'name',   # 3. Полное название
+        ]
+
+        def validate_code(self, value):
+            """Проверка длины кода (п. 2.2.6.2 )"""
+            if not (2 <= len(value) <= 4):
+                raise serializers.ValidationError("Код компании должен содержать от 2 до 4 символов.")
+            return value.upper()

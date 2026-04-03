@@ -1,10 +1,11 @@
 from django.shortcuts import render
 from rest_framework import viewsets, filters
-from .models import Participant, Course
-from .serializers import ParticipantSerializer, CourseSerializer
+from .models import Participant, Course, Company
+from .serializers import ParticipantSerializer, CourseSerializer, CompanySerializer 
+
 class ParticipantViewSet(viewsets.ModelViewSet):
     """
-    CRUD для сотрудников.
+    CRUD для Сотрудников (п. 2.2.1).
     """
     queryset = Participant.objects.all().select_related('company')
     serializer_class = ParticipantSerializer
@@ -17,11 +18,21 @@ class ParticipantViewSet(viewsets.ModelViewSet):
 
 class CourseViewSet(viewsets.ModelViewSet):
     """
-    CRUD для Курсов обучения (п. 2.2.2).
+    CRUD для Курсов (п. 2.2.2).
     """
     queryset = Course.objects.all()
     serializer_class = CourseSerializer
-    
-    # Поиск по названию курса пригодится для фронтенда
+
     filter_backends = [filters.SearchFilter]
     search_fields = ['title']
+
+class CompanySerializer(viewsets.ModelViewSet):
+    """
+    CRUD для Компаний (п. 2.2.6).
+    """
+    queryset = Company.objects.all()
+    serializer_class = CompanySerializer
+
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
+    search_fields = ['name', 'code']
+    ordering_fields = ['name']
