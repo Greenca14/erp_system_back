@@ -12,6 +12,8 @@ from django.shortcuts import get_object_or_404
 from rest_framework.parsers import MultiPartParser, FormParser
 from .services import run_xml_import, export_employee_to_xml, export_course_to_xml
 from django.http import HttpResponse
+from datetime import timedelta
+from django.db.models import Min, Max, Avg
 
 @extend_schema(
     tags=['Участник обучения - Employee']
@@ -241,3 +243,31 @@ class XMLExportView(GenericAPIView):
             
         except Exception as e:
             return HttpResponse(f"Ошибка при экспорте: {str(e)}", status=404)
+        
+class GanttChartDataView(APIView):
+
+    def get(self, request):
+        groups_qs = Group.objects.all()
+        
+        if not groups_qs.exists():
+            return Response({
+                "min_date": None,
+                "max_date": None,
+                "groups": []
+            })
+
+        aggr = groups_qs.aggregate(
+            first_start=Min('start_date'),
+            last_end=Max('end_date')
+        )
+
+        min_date = aggr['first_start'] - timedelta(days=3) if aggr['first_start'] else None
+        max_date = aggr['last_end'] + timedelta(days=3) if aggr['last_end'] else None
+
+        serializer = GroupSerializer(groups_qs, many=True)
+
+        return Response({
+            "min_date": min_date,
+            "max_date": max_date,
+            "groups": serializer.data
+        })
