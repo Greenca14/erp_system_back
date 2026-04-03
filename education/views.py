@@ -1,6 +1,7 @@
 import threading
 from django.shortcuts import render
-from drf_spectacular.utils import extend_schema, extend_schema_view, inline_serializer
+from drf_spectacular.utils import extend_schema, inline_serializer
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import viewsets, status
 from rest_framework.generics import GenericAPIView
 from rest_framework import viewsets, status, filters
@@ -43,6 +44,7 @@ class CompanyViewSet(viewsets.ModelViewSet):
     queryset = Company.objects.all()
     serializer_class = CompanySerializer
 
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
     search_fields = ['name', 'code']
     ordering_fields = ['id', 'name', 'code']
 
@@ -54,7 +56,8 @@ class SpecificationViewSet(viewsets.ModelViewSet):
     queryset = Specification.objects.all().select_related('company')
     serializer_class = SpecificationSerializer
     
-    filter_backends = ['company', 'date']
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter, DjangoFilterBackend]
+    filterset_fields = ['company', 'date']
     search_fields = ['number', 'company__name']
     ordering_fields = ['id', 'date', 'number', 'total_with_vat']
     
@@ -66,7 +69,8 @@ class GroupViewSet(viewsets.ModelViewSet):
     queryset = Group.objects.all().select_related('course').select_related('specification')
     serializer_class = GroupSerializer
 
-    filter_backends = ['status', 'course', 'specification']
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter, DjangoFilterBackend]
+    filterset_fields = ['status', 'course', 'specification']
     search_fields = ['course__title', 'specification__number']
     ordering_fields = ['id', 'start_date', 'end_date', 'status', 'average_progress']
 
@@ -243,7 +247,11 @@ class XMLExportView(GenericAPIView):
             
         except Exception as e:
             return HttpResponse(f"Ошибка при экспорте: {str(e)}", status=404)
-        
+
+
+@extend_schema(
+    tags=['Данные для диаграммы Ганта']
+)
 class GanttChartDataView(APIView):
 
     def get(self, request):
