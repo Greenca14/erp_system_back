@@ -1,7 +1,8 @@
 import threading
 from django.shortcuts import render
-from drf_spectacular.utils import extend_schema, extend_schema_view
+from drf_spectacular.utils import extend_schema, extend_schema_view, inline_serializer
 from rest_framework import viewsets, status
+from rest_framework.generics import GenericAPIView
 from .models import *
 from .serializers import *
 from rest_framework.views import APIView
@@ -143,16 +144,35 @@ class GroupEmployeeViewSet(viewsets.ModelViewSet):
 
 
 @extend_schema(
-    tags=['Импорт и экспорт в формате XML']
+    tags=['Импорт и экспорт в формате XML'],
+    request=XMLUploadSerializer,
+    responses={
+        202: inline_serializer(
+            name='XMLUploadResponse',
+            fields={
+                'status': serializers.CharField(),
+                'message': serializers.CharField(),
+            }
+        ),
+        400: inline_serializer(
+            name='XMLUploadError',
+            fields={'error': serializers.CharField()}
+        ),
+    }
 )
 class XMLUploadView(APIView):
     """
     API для асинхронной загрузки данных из Global ERP через XML.
     """
     parser_classes = [MultiPartParser, FormParser]
+    serializer_class = XMLUploadSerializer
 
     def post(self, request):
-        file_obj = request.FILES.get('file')
+        serializer = XMLUploadSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        file_obj = serializer.validated_data['file']
         
         if not file_obj:
             return Response(
@@ -180,8 +200,12 @@ class XMLUploadView(APIView):
             
         except Exception as e:
             return Response({"error": f"Ошибка сервера: {str(e)}"}, status=500)
-        
-class XMLExportView(APIView):
+
+
+@extend_schema(
+    tags=['Импорт и экспорт в формате XML']
+)
+class XMLExportView(GenericAPIView):
     """API для выгрузки XML данных"""
     
     def get(self, request, model_type, obj_id):

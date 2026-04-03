@@ -153,6 +153,6 @@ SPECTACULAR_SETTINGS = {
     'DESCRIPTION': 'Документация API для ERP Системы, разработаной командой арбуз в рамках хакатона',
     'VERSION': '1.0.0',
     'SERVE_INCLUDE_SCHEMA': False,
-    'COMPONENT_SPLIT_REQUEST': False,
+    'COMPONENT_SPLIT_REQUEST': True,
     'SCHEMA_PATH_PREFIX': '/api/v1'
 }

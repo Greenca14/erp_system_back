@@ -215,3 +215,7 @@ class GroupEmployeeSerializer(serializers.ModelSerializer):
             'employee_id',
             'progress_percent'
         ]
+
+
+class XMLUploadSerializer(serializers.Serializer):
+    file = serializers.FileField(help_text="Выберите XML файл для импорта.")
