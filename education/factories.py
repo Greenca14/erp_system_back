@@ -2,7 +2,6 @@ import factory
 from factory.django import DjangoModelFactory
 from faker import Faker
 from datetime import timedelta
-from django.utils import timezone
 from .models import Company, Course, Specification, Group, Employee, GroupEmployee
 
 fake = Faker()
@@ -23,7 +22,7 @@ class CourseFactory(DjangoModelFactory):
 
     title = factory.Faker('catch_phrase')
     description = factory.Faker('text', max_nb_chars=200)
-    duration_days = factory.Faker('random_int', min=5, max=120)
+    duration_days = factory.Faker('random_int', min=5, max=25)
     base_price = factory.Faker('random_int', min=500, max=10000)
 
 
@@ -33,7 +32,7 @@ class SpecificationFactory(DjangoModelFactory):
         django_get_or_create = ('number',)
 
     date = factory.Faker('date_this_year')
-    number = factory.Sequence(lambda n: f"№-{n:05d}") 
+    number = factory.Sequence(lambda n: f"SP-{n:04d}") 
     company = factory.SubFactory(CompanyFactory)
 
 

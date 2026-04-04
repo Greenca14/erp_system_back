@@ -18,7 +18,7 @@ from django.http import HttpResponse
 from datetime import timedelta
 from django.db.models import Min, Max, Avg
 from django.utils.decorators import method_decorator
-from django.views.decorators.cache import cache_control, cache_page
+from django.views.decorators.cache import cache_page
 
 class StandardSetPagination(PageNumberPagination):
     page_size = 10
@@ -40,7 +40,7 @@ class EmployeeViewSet(viewsets.ModelViewSet):
 
     @method_decorator(cache_page(60 * 15, key_prefix='employee_list'))
     def list(self, request, *args, **kwargs):
-        return super().list(request, args, kwargs)
+        return super().list(request, *args, **kwargs)
 
 @extend_schema(
     tags=['Курс обучения - Course'],
@@ -55,7 +55,7 @@ class CourseViewSet(viewsets.ModelViewSet):
 
     @method_decorator(cache_page(60 * 15, key_prefix='course_list'))
     def list(self, request, *args, **kwargs):
-        return super().list(request, args, kwargs)
+        return super().list(request, *args, **kwargs)
 
 @extend_schema(
     tags=['Компания - Company']
@@ -71,7 +71,7 @@ class CompanyViewSet(viewsets.ModelViewSet):
 
     @method_decorator(cache_page(60 * 15, key_prefix='company_list'))
     def list(self, request, *args, **kwargs):
-        return super().list(request, args, kwargs)
+        return super().list(request, *args, **kwargs)
 
 
 @extend_schema(
@@ -89,7 +89,7 @@ class SpecificationViewSet(viewsets.ModelViewSet):
 
     @method_decorator(cache_page(60 * 15, key_prefix='specification_list'))
     def list(self, request, *args, **kwargs):
-        return super().list(request, args, kwargs)
+        return super().list(request, *args, **kwargs)
     
 
 @extend_schema(
@@ -107,7 +107,7 @@ class GroupViewSet(viewsets.ModelViewSet):
 
     @method_decorator(cache_page(60 * 15, key_prefix='group_list'))
     def list(self, request, *args, **kwargs):
-        return super().list(request, args, kwargs)
+        return super().list(request, *args, **kwargs)
 
 @extend_schema(
     tags=['Участники группы - Group Employees']
@@ -342,6 +342,7 @@ class XMLExportView(GenericAPIView):
     }
 )
 class GanttChartDataView(APIView):
+    @method_decorator(cache_page(60 * 30, key_prefix='gantt_data'))
     def get(self, request):
         groups_qs = Group.objects.all()
         
@@ -386,6 +387,7 @@ class GanttChartDataView(APIView):
     }
 )
 class StatsView(APIView):
+    @method_decorator(cache_page(60 * 15, key_prefix='stats'))
     def get(self, request):
         active_groups = Group.objects.filter(status='in_progress')
         active_groups_count = active_groups.count()
