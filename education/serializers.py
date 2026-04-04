@@ -1,3 +1,5 @@
+from typing import Any, Dict, List
+
 from rest_framework import serializers
 from .models import Employee, Company, Course, Specification, Group, GroupEmployee
 
@@ -5,6 +7,16 @@ class SimpleSpecificationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Specification
         fields = ['id', 'date', 'number']
+
+
+class SimpleEmployeeSerializer(serializers.ModelSerializer):
+    company_name = serializers.CharField(
+        source='company.name', read_only=True, help_text='Наименование компании'
+    )
+
+    class Meta:
+        model = Employee
+        fields = ['id', 'full_name', 'company_name', 'email']
 
 
 class SimpleGroupSerializer(serializers.ModelSerializer):
@@ -27,19 +39,9 @@ class SimpleGroupSerializerWithMembers(serializers.ModelSerializer):
         model = Group
         fields = ['id', 'course_title', 'start_date', 'end_date', 'status', 'average_progress', 'members']
 
-    def get_members(self, obj):
+    def get_members(self, obj) -> List[Dict[str, Any]]:
         memberships = obj.group_membership.select_related('employee').all()
         return SimpleEmployeeSerializer([m.employee for m in memberships], many=True).data
-
-
-class SimpleEmployeeSerializer(serializers.ModelSerializer):
-    company_name = serializers.CharField(
-        source='company.name', read_only=True, help_text='Наименование компании'
-    )
-
-    class Meta:
-        model = Employee
-        fields = ['id', 'full_name', 'company_name', 'email']
 
 
 class SimpleCompanySerializer(serializers.ModelSerializer):

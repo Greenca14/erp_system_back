@@ -11,6 +11,7 @@ class Company(models.Model):
     class Meta:
         verbose_name = "Компания"
         verbose_name_plural = "Компании"
+        ordering = ['id']
 
     def __str__(self):
         return f"{self.code} | {self.name}"
@@ -26,6 +27,7 @@ class Course(models.Model):
     class Meta:
         verbose_name = "Kypc обучения"
         verbose_name_plural = "Курсы обучения"
+        ordering = ['id']
 
     def __str__(self):
         return self.title
@@ -66,6 +68,7 @@ class Specification(models.Model):
     class Meta:
         verbose_name = "Спецификация"
         verbose_name_plural = "Спецификации"
+        ordering = ['id']
 
     def __str__(self):
         return f"Спец. №{self.number} от {self.date}"
@@ -113,6 +116,7 @@ class Group(models.Model):
     class Meta:
         verbose_name = "Учебная группа"
         verbose_name_plural = "Учебные группы"
+        ordering = ['id']
 
 
 class Employee(models.Model):
@@ -124,6 +128,7 @@ class Employee(models.Model):
     class Meta:
         verbose_name = "Участник обучения"
         verbose_name_plural = "Участники обучения"
+        ordering = ['id']
 
     def __str__(self):
         return self.full_name
@@ -143,3 +148,4 @@ class GroupEmployee(models.Model):
         unique_together = ('group', 'employee')
         verbose_name = "Участник группы"
         verbose_name_plural = "Детализация групп"
+        ordering = ['id']
