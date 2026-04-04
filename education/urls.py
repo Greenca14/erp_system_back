@@ -13,6 +13,7 @@ urlpatterns = [
     path('xml/upload/', XMLUploadView.as_view(), name='xml-upload'),
     path('xml/export/<str:model_type>/<int:obj_id>/', XMLExportView.as_view(), name='xml-export'),
     path('gantt-data/', GanttChartDataView.as_view(), name='gantt-data'),
+    path('stats/', StatsView.as_view(), name='stats'),
     
     path('', include(router.urls)),
 

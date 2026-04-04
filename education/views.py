@@ -368,3 +368,42 @@ class GanttChartDataView(APIView):
             "max_date": max_date,
             "groups": serializer.data
         })
+    
+
+@extend_schema(
+    tags=['Статистика'],
+    summary='Получение общей статистики по активным группам',
+    description='Возвращает количество активных групп, общий бюджет обучения, средний прогресс и количество сотрудников в обучении.',
+    responses={
+        200: inline_serializer(
+            name='StatsResponse',
+            fields={
+                'active_groups': serializers.IntegerField(),
+                'study_budget': serializers.DecimalField(max_digits=15, decimal_places=2),
+                'average_progress': serializers.FloatField(),
+                'active_employees': serializers.IntegerField(),
+            }
+        )
+    }
+)
+class StatsView(APIView):
+    def get(self, request):
+        active_groups = Group.objects.filter(status='in_progress')
+        active_groups_count = active_groups.count()
+
+        study_budget = active_groups.aggregate(total=Sum('total_cost'))['total'] or 0
+
+        avg_progress = GroupEmployee.objects.filter(
+            group__status='in_progress'
+        ).aggregate(avg=Avg('progress_percent'))['avg'] or 0.0
+   
+        active_employees_count = GroupEmployee.objects.filter(
+            group__status='in_progress'
+        ).values('employee').distinct().count()
+        
+        return Response({
+            'active_groups': active_groups_count,
+            'study_budget': study_budget,
+            'average_progress': round(avg_progress, 2),
+            'active_employees': active_employees_count,
+        })
