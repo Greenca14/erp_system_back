@@ -14,6 +14,7 @@ urlpatterns = [
     path('xml/export/<str:model_type>/<int:obj_id>/', XMLExportView.as_view(), name='xml-export'),
     path('gantt-data/', GanttChartDataView.as_view(), name='gantt-data'),
     path('stats/', StatsView.as_view(), name='stats'),
+    path('stats/company/<int:id>/', CompanyStatsView.as_view(), name='company-stats'),
     
     path('', include(router.urls)),
 

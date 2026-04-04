@@ -407,3 +407,45 @@ class StatsView(APIView):
             'average_progress': round(avg_progress, 2),
             'active_employees': active_employees_count,
         })
+
+
+@extend_schema(
+    tags=['Статистика'],
+    summary='Статистика по конкретной компании',
+    description='Возвращает количество сотрудников, записанных на курсы, количество спецификаций, общий бюджет обучения и средний прогресс.',
+    responses={
+        200: inline_serializer(
+            name='CompanyStatsResponse',
+            fields={
+                'employees_signed': serializers.IntegerField(),
+                'specifications_count': serializers.IntegerField(),
+                'total_budget_spent': serializers.DecimalField(max_digits=15, decimal_places=2),
+                'average_progress': serializers.FloatField(),
+            }
+        )
+    }
+)
+class CompanyStatsView(APIView):
+    def get(self, request, id):
+        company = get_object_or_404(Company, pk=id)
+
+        employees_signed = GroupEmployee.objects.filter(
+            group__specification__company=company
+        ).values('employee').distinct().count()
+
+        specifications_count = company.specifications.count()
+
+        total_budget_spent = GroupEmployee.objects.filter(
+            group__specification__company=company
+        ).aggregate(total=Sum('group__total_cost'))['total'] or 0
+
+        average_progress = GroupEmployee.objects.filter(
+            group__specification__company=company
+        ).aggregate(avg=Avg('progress_percent'))['avg'] or 0.0
+
+        return Response({
+            'employees_signed': employees_signed,
+            'specifications_count': specifications_count,
+            'total_budget_spent': total_budget_spent,
+            'average_progress': round(average_progress, 2),
+        })
