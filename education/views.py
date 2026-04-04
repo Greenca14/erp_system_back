@@ -127,7 +127,29 @@ class GroupEmployeeViewSet(viewsets.ModelViewSet):
         })
 
     @extend_schema(
-        description='Добавить пользователей в группу'
+        description='Добавить пользователей в группу',
+        request=inline_serializer(
+            name='AddEmployeesRequest',
+            fields={
+                'employee_ids': serializers.ListField(
+                    child=serializers.IntegerField(),
+                    help_text='Список ID сотрудников для добавления в группу'
+                ),
+            }
+        ),
+        responses={
+            201: inline_serializer(
+                name='AddEmployeesResponse',
+                fields={
+                    'created': serializers.ListField(child=serializers.IntegerField()),
+                    'errors': serializers.ListField(child=serializers.CharField()),
+                }
+            ),
+            400: inline_serializer(
+                name='BadRequestResponse',
+                fields={'error': serializers.CharField()}
+            ),
+        }
     )
     def create(self, request, *args, **kwargs):
         group_id = self.kwargs.get('group_id')
@@ -159,7 +181,20 @@ class GroupEmployeeViewSet(viewsets.ModelViewSet):
         )
 
     @extend_schema(
-        description='Обновить прогресс пользователя'
+        description='Обновить прогресс пользователя',
+        request=inline_serializer(
+            name='UpdateProgressRequest',
+            fields={
+                'progress_percent': serializers.IntegerField(
+                    min_value=0, max_value=100,
+                    help_text='Новый прогресс (0-100)'
+                )
+            }
+        ),
+        responses={
+            200: GroupEmployeeSerializer(),
+            404: None,
+        }
     )
     def partial_update(self, request, *args, **kwargs):
         membership = self.get_object()
