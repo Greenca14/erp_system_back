@@ -1,6 +1,8 @@
 networks:
   redisNetwork:
     driver: bridge
+  nginxNetwork:
+    driver: bridge
 
 services:
   redis:
@@ -24,8 +26,26 @@ services:
     environment:
       - REDIS_USER=${REDIS_USER}
       - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY}
     ports:
       - "8000:8000"
     networks:
       - redisNetwork
+      - nginxNetwork
     container_name: erp_backend
+  
+  nginx:
+    image: nginx:latest
+    restart: always
+    depends_on:
+      - api
+    ports:
+      - "80:80"
+      - "443:443"
+    networks:
+      - nginxNetwork
+    volumes:
+      - /var/www/erp_system_front/dist:/usr/share/nginx/html
+      - ./docker/nginx/nginx.conf:/etc/nginx/conf.d/default.conf
+      - ./docker/nginx/cert:/etc/letsencrypt/live/labzavr.ru
+    container_name: erp_nginx
