@@ -62,7 +62,6 @@ class EmployeeViewSet(viewsets.ModelViewSet):
             response = super().list(request, *args, **kwargs)
             cache.set(cache_key, response.data, 60 * 15)
 
-        # Disable client-side caching
         response['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
         response['Pragma'] = 'no-cache'
         response['Expires'] = '0'
@@ -79,9 +78,24 @@ class CourseViewSet(viewsets.ModelViewSet):
     filter_backends = [filters.SearchFilter]
     search_fields = ['title']
 
-    @method_decorator(cache_page(60 * 15, key_prefix='course_list'))
+    # @method_decorator(cache_page(60 * 15, key_prefix='course_list'))
+    # def list(self, request, *args, **kwargs):
+    #     return super().list(request, *args, **kwargs)
+
     def list(self, request, *args, **kwargs):
-        return super().list(request, *args, **kwargs)
+        cache_key = f"course_list:{request.get_full_path()}"
+        cached_data = cache.get(cache_key)
+
+        if cached_data is not None:
+            response = Response(cached_data)
+        else:
+            response = super().list(request, *args, **kwargs)
+            cache.set(cache_key, response.data, 60 * 15)
+
+        response['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+        response['Pragma'] = 'no-cache'
+        response['Expires'] = '0'
+        return response
 
 @extend_schema(
     tags=['Компания - Company']
@@ -95,9 +109,24 @@ class CompanyViewSet(viewsets.ModelViewSet):
     search_fields = ['name', 'code']
     ordering_fields = ['id', 'name', 'code']
 
-    @method_decorator(cache_page(60 * 15, key_prefix='company_list'))
+    # @method_decorator(cache_page(60 * 15, key_prefix='company_list'))
+    # def list(self, request, *args, **kwargs):
+    #     return super().list(request, *args, **kwargs)
+
     def list(self, request, *args, **kwargs):
-        return super().list(request, *args, **kwargs)
+        cache_key = f"company_list:{request.get_full_path()}"
+        cached_data = cache.get(cache_key)
+
+        if cached_data is not None:
+            response = Response(cached_data)
+        else:
+            response = super().list(request, *args, **kwargs)
+            cache.set(cache_key, response.data, 60 * 15)
+
+        response['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+        response['Pragma'] = 'no-cache'
+        response['Expires'] = '0'
+        return response
 
 
 @extend_schema(
@@ -113,9 +142,24 @@ class SpecificationViewSet(viewsets.ModelViewSet):
     search_fields = ['number', 'company__name']
     ordering_fields = ['id', 'date', 'number', 'total_with_vat']
 
-    @method_decorator(cache_page(60 * 15, key_prefix='specification_list'))
+    # @method_decorator(cache_page(60 * 15, key_prefix='specification_list'))
+    # def list(self, request, *args, **kwargs):
+    #     return super().list(request, *args, **kwargs)
+
     def list(self, request, *args, **kwargs):
-        return super().list(request, *args, **kwargs)
+        cache_key = f"specification_list:{request.get_full_path()}"
+        cached_data = cache.get(cache_key)
+
+        if cached_data is not None:
+            response = Response(cached_data)
+        else:
+            response = super().list(request, *args, **kwargs)
+            cache.set(cache_key, response.data, 60 * 15)
+
+        response['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+        response['Pragma'] = 'no-cache'
+        response['Expires'] = '0'
+        return response
     
 
 @extend_schema(
@@ -131,9 +175,24 @@ class GroupViewSet(viewsets.ModelViewSet):
     search_fields = ['course__title', 'specification__number']
     ordering_fields = ['id', 'start_date', 'end_date', 'status', 'average_progress']
 
-    @method_decorator(cache_page(60 * 15, key_prefix='group_list'))
+    # @method_decorator(cache_page(60 * 15, key_prefix='group_list'))
+    # def list(self, request, *args, **kwargs):
+    #     return super().list(request, *args, **kwargs)
+
     def list(self, request, *args, **kwargs):
-        return super().list(request, *args, **kwargs)
+        cache_key = f"group_list:{request.get_full_path()}"
+        cached_data = cache.get(cache_key)
+
+        if cached_data is not None:
+            response = Response(cached_data)
+        else:
+            response = super().list(request, *args, **kwargs)
+            cache.set(cache_key, response.data, 60 * 15)
+
+        response['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+        response['Pragma'] = 'no-cache'
+        response['Expires'] = '0'
+        return response
 
 @extend_schema(
     tags=['Участники группы - Group Employees']
