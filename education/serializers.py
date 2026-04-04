@@ -17,6 +17,21 @@ class SimpleGroupSerializer(serializers.ModelSerializer):
         fields = ['id', 'course_title', 'start_date', 'end_date', 'status', 'average_progress']
 
 
+class SimpleGroupSerializerWithMembers(serializers.ModelSerializer):
+    course_title = serializers.CharField(
+        source='course.title', read_only=True, help_text='Наименование курса'
+    )
+    members = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Group
+        fields = ['id', 'course_title', 'start_date', 'end_date', 'status', 'average_progress', 'members']
+
+    def get_members(self, obj):
+        memberships = obj.group_membership.select_related('employee').all()
+        return SimpleEmployeeSerializer([m.employee for m in memberships], many=True).data
+
+
 class SimpleEmployeeSerializer(serializers.ModelSerializer):
     company_name = serializers.CharField(
         source='company.name', read_only=True, help_text='Наименование компании'

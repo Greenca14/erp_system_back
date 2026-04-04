@@ -328,21 +328,20 @@ class XMLExportView(GenericAPIView):
 
 @extend_schema(
     tags=['Данные для диаграммы Ганта'],
-    summary='Получение данных для диаграммы Ганта',
-    description='Возвращает все группы с датами начала и окончания, а также минимальную и максимальную даты (с отступом ±3 дня).',
+    summary='Данные для диаграммы Ганта с участниками',
+    description='Возвращает все группы с датами, минимальную/максимальную дату (+-3 дня) и список участников для каждой группы.',
     responses={
         200: inline_serializer(
-            name='GanttChartDataResponse',
+            name='GanttChartResponse',
             fields={
                 'min_date': serializers.DateField(allow_null=True),
                 'max_date': serializers.DateField(allow_null=True),
-                'groups': SimpleGroupSerializer(many=True),
+                'groups': SimpleGroupSerializerWithMembers(many=True),
             }
         )
     }
 )
 class GanttChartDataView(APIView):
-
     def get(self, request):
         groups_qs = Group.objects.all()
         
@@ -361,7 +360,7 @@ class GanttChartDataView(APIView):
         min_date = aggr['first_start'] - timedelta(days=3) if aggr['first_start'] else None
         max_date = aggr['last_end'] + timedelta(days=3) if aggr['last_end'] else None
 
-        serializer = SimpleGroupSerializer(groups_qs, many=True)
+        serializer = SimpleGroupSerializerWithMembers(groups_qs, many=True)
 
         return Response({
             "min_date": min_date,
