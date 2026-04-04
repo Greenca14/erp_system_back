@@ -16,6 +16,8 @@ from .services import run_xml_import, export_employee_to_xml, export_course_to_x
 from django.http import HttpResponse
 from datetime import timedelta
 from django.db.models import Min, Max, Avg
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import cache_control, cache_page
 
 class StandardSetPagination(PageNumberPagination):
     page_size = 10
@@ -35,6 +37,10 @@ class EmployeeViewSet(viewsets.ModelViewSet):
     search_fields = ['full_name', 'email']
     ordering_fields = ['id', 'full_name']
 
+    @method_decorator(cache_page(60 * 15, key_prefix='employee_list'))
+    def list(self, request, *args, **kwargs):
+        return super().list(request, args, kwargs)
+
 @extend_schema(
     tags=['Курс обучения - Course'],
 )
@@ -45,6 +51,10 @@ class CourseViewSet(viewsets.ModelViewSet):
 
     filter_backends = [filters.SearchFilter]
     search_fields = ['title']
+
+    @method_decorator(cache_page(60 * 15, key_prefix='course_list'))
+    def list(self, request, *args, **kwargs):
+        return super().list(request, args, kwargs)
 
 @extend_schema(
     tags=['Компания - Company']
@@ -57,6 +67,10 @@ class CompanyViewSet(viewsets.ModelViewSet):
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
     search_fields = ['name', 'code']
     ordering_fields = ['id', 'name', 'code']
+
+    @method_decorator(cache_page(60 * 15, key_prefix='company_list'))
+    def list(self, request, *args, **kwargs):
+        return super().list(request, args, kwargs)
 
 
 @extend_schema(
@@ -71,6 +85,10 @@ class SpecificationViewSet(viewsets.ModelViewSet):
     filterset_fields = ['company', 'date']
     search_fields = ['number', 'company__name']
     ordering_fields = ['id', 'date', 'number', 'total_with_vat']
+
+    @method_decorator(cache_page(60 * 15, key_prefix='specification_list'))
+    def list(self, request, *args, **kwargs):
+        return super().list(request, args, kwargs)
     
 
 @extend_schema(
@@ -85,6 +103,10 @@ class GroupViewSet(viewsets.ModelViewSet):
     filterset_fields = ['status', 'course', 'specification']
     search_fields = ['course__title', 'specification__number']
     ordering_fields = ['id', 'start_date', 'end_date', 'status', 'average_progress']
+
+    @method_decorator(cache_page(60 * 15, key_prefix='group_list'))
+    def list(self, request, *args, **kwargs):
+        return super().list(request, args, kwargs)
 
 @extend_schema(
     tags=['Участники группы - Group Employees']
