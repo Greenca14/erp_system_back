@@ -31,7 +31,7 @@ class Command(BaseCommand):
 
         self.stdout.write('Генерация связей...')
         for group in groups:
-            chosen = random.sample(employees, k=random.randint(3, 15))
+            chosen = random.sample(employees, k=random.randint(3, 5))
             for emp in chosen:
                 GroupEmployeeFactory(group=group, employee=emp)
 
