@@ -131,10 +131,7 @@ class GroupEmployeeViewSet(viewsets.ModelViewSet):
         request=inline_serializer(
             name='AddEmployeesRequest',
             fields={
-                'employee_ids': serializers.ListField(
-                    child=serializers.IntegerField(),
-                    help_text='Список ID сотрудников для добавления в группу'
-                ),
+                'employee_ids': serializers.ListField(child=serializers.IntegerField()),
             }
         ),
         responses={
@@ -185,10 +182,7 @@ class GroupEmployeeViewSet(viewsets.ModelViewSet):
         request=inline_serializer(
             name='UpdateProgressRequest',
             fields={
-                'progress_percent': serializers.IntegerField(
-                    min_value=0, max_value=100,
-                    help_text='Новый прогресс (0-100)'
-                )
+                'progress_percent': serializers.IntegerField()
             }
         ),
         responses={
