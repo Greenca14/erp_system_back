@@ -1,6 +1,7 @@
 import threading
 from django.shortcuts import render
-from drf_spectacular.utils import extend_schema, inline_serializer
+from drf_spectacular.utils import extend_schema, inline_serializer, OpenApiParameter
+from drf_spectacular.types import OpenApiTypes
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import viewsets, status
 from rest_framework.generics import GenericAPIView
@@ -288,7 +289,20 @@ class XMLUploadView(APIView):
 
 
 @extend_schema(
-    tags=['Импорт и экспорт в формате XML']
+    tags=['Импорт и экспорт в формате XML'],
+    summary='Экспорт объекта в XML',
+    description='Экспорт данных сотрудника (employee) или курса (course) в XML файл.',
+    parameters=[
+        OpenApiParameter('model_type', OpenApiTypes.STR, OpenApiParameter.PATH,
+                         description='Тип: "employee" или "course"', enum=['employee', 'course']),
+        OpenApiParameter('obj_id', OpenApiTypes.INT, OpenApiParameter.PATH,
+                         description='ID объекта'),
+    ],
+    responses={
+        200: ('XML файл', 'application/xml'),
+        400: 'Неверный тип модели',
+        404: 'Объект не найден',
+    }
 )
 class XMLExportView(GenericAPIView):
     """API для выгрузки XML данных"""
@@ -313,7 +327,19 @@ class XMLExportView(GenericAPIView):
 
 
 @extend_schema(
-    tags=['Данные для диаграммы Ганта']
+    tags=['Данные для диаграммы Ганта'],
+    summary='Получение данных для диаграммы Ганта',
+    description='Возвращает все группы с датами начала и окончания, а также минимальную и максимальную даты (с отступом ±3 дня).',
+    responses={
+        200: inline_serializer(
+            name='GanttChartDataResponse',
+            fields={
+                'min_date': serializers.DateField(allow_null=True),
+                'max_date': serializers.DateField(allow_null=True),
+                'groups': SimpleGroupSerializer(many=True),
+            }
+        )
+    }
 )
 class GanttChartDataView(APIView):
 
