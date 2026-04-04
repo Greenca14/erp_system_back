@@ -284,7 +284,7 @@ class GanttChartDataView(APIView):
         min_date = aggr['first_start'] - timedelta(days=3) if aggr['first_start'] else None
         max_date = aggr['last_end'] + timedelta(days=3) if aggr['last_end'] else None
 
-        serializer = GroupSerializer(groups_qs, many=True)
+        serializer = SimpleGroupSerializer(groups_qs, many=True)
 
         return Response({
             "min_date": min_date,
