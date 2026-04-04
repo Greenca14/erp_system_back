@@ -19,6 +19,7 @@ from datetime import timedelta
 from django.db.models import Min, Max, Avg
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page
+from django.core.cache import cache
 
 class StandardSetPagination(PageNumberPagination):
     page_size = 10
@@ -47,9 +48,25 @@ class EmployeeViewSet(viewsets.ModelViewSet):
     search_fields = ['full_name', 'email']
     ordering_fields = ['id', 'full_name']
 
-    @method_decorator(cache_page(60 * 15, key_prefix='employee_list'))
+    # @method_decorator(cache_page(60 * 15, key_prefix='employee_list'))
+    # def list(self, request, *args, **kwargs):
+    #     return super().list(request, *args, **kwargs)
+    
     def list(self, request, *args, **kwargs):
-        return super().list(request, *args, **kwargs)
+        cache_key = f"employee_list:{request.get_full_path()}"
+        cached_data = cache.get(cache_key)
+
+        if cached_data is not None:
+            response = Response(cached_data)
+        else:
+            response = super().list(request, *args, **kwargs)
+            cache.set(cache_key, response.data, 60 * 15)
+
+        # Disable client-side caching
+        response['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+        response['Pragma'] = 'no-cache'
+        response['Expires'] = '0'
+        return response
 
 @extend_schema(
     tags=['Курс обучения - Course'],
