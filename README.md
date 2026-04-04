@@ -13,42 +13,39 @@ API: Django REST Framework (DRF)
 Интеграция: XML парсинг (Global ERP)
 
 # Локальное развертывание
-Клонирование репозитория:
+Подготовка окружения:
 
-Bash
-
-git clone <ссылка_на_ваш_репозиторий>
+Клонирование репозитория
+git clone <ссылка_на_репозиторий>
 cd erp_system_back
-Настройка виртуального окружения:
 
-Bash
-
+Настройка виртуального окружения
 python -m venv venv
-# Windows:
+
+Активация (Windows)
 .\venv\Scripts\activate
-# Linux/Mac:
+Активация (Linux/Mac)
 source venv/bin/activate
-Установка зависимостей:
 
-Bash
-
+Установка зависимостей
 pip install -r requirements.txt
-(Если файла еще нет, установи вручную: pip install django djangorestframework django-cors-headers)
 
-Миграции и База данных:
-
-Bash
-
-python manage.py makemigrations
+# База данных и заполнение
+Создание структуры таблиц
 python manage.py migrate
-Создание администратора:
 
-Bash
+Заполнение базы тестовыми данными (Курсы, Группы, Компании)
+python manage.py seed_db
 
-python manage.py createsuperuser
-Запуск сервера:
-
-Bash
-
+# Запуск сервера
 python manage.py runserver
-API будет доступно по адресу: http://127.0.0.1:8000/
+
+# Документация API (Swagger)
+Для удобства интеграции с фронтендом настроен интерактивный Swagger. Там можно посмотреть все эндпоинты, форматы JSON и протестировать запросы.
+
+Swagger UI: http://127.0.0.1:8000/api/v1/swagger/
+Схема (JSON/YAML): http://127.0.0.1:8000/api/v1/
+
+
+
+
