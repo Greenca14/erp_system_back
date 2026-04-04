@@ -15,7 +15,6 @@
 
 ---
 
-
 ## Локальное развертывание
 
 ### 1. Подготовка окружения
@@ -36,8 +35,8 @@ python -m venv venv
 # source venv/bin/activate
 
 # Установка зависимостей
-pip install -r requirements.txt```
-
+pip install -r requirements.txt
+```
 
 ### 2. База данных и наполнение
 
@@ -48,16 +47,18 @@ pip install -r requirements.txt```
 python manage.py migrate
 
 # Заполнение базы тестовыми данными (Сидеры)
-python manage.py seed_db```
-
+python manage.py seed_db
+```
 
 ### 3. Запуск сервера
 
 ```Bash
-python manage.py runserver```
-
+python manage.py runserver
+```
 
 API будет доступно по адресу: http://127.0.0.1:8000/
+
+---
 
 ## Документация API (Swagger)
 
