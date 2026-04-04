@@ -20,7 +20,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
-SECRET_KEY = os.getenv('DJANGO_SECRET_KEY')
+# при локальном запуске будет генериться рандомный секрет для фронтеров
+SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', __import__('secrets').token_urlsafe(50)[:50])
 
 DEBUG = os.getenv('DEBUG', 'False') == 'True'
 
@@ -58,6 +59,8 @@ MIDDLEWARE = [
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:8080",
     "http://127.0.0.1:8080",
+    "https://labzavr.ru",
+    "https://www.labzavr.ru",
 ]
 
 CORS_ALLOW_ALL_ORIGINS = True 

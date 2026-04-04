@@ -33,7 +33,7 @@ class Course(models.Model):
 class Specification(models.Model):
     """2.2.5 Спецификация"""
     date = models.DateField(verbose_name="Дата спецификации")
-    number = models.CharField(max_length=50, unique=True, verbose_name="Номер спецификации")
+    number = models.CharField(max_length=50, unique=True, blank=True, editable=False, verbose_name="Номер спецификации")
     company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name='specifications', verbose_name="Компания-заказчик")
 
     @property
@@ -50,6 +50,18 @@ class Specification(models.Model):
     def total_with_vat(self) -> float:
         """Итого с НДС (2.2.5.8)"""
         return float(self.total_no_vat) + self.vat_amount
+
+    def save(self, *args, **kwargs):
+        if not self.number:
+            prefix = self.company.code
+            year = self.date.year
+            last_number = Specification.objects.filter(
+                company=self.company,
+                date__year=year
+            ).count()
+            new_seq = last_number + 1
+            self.number = f"{prefix}-{year}-{new_seq:04d}"
+        super().save(*args, **kwargs)
 
     class Meta:
         verbose_name = "Спецификация"

@@ -41,7 +41,7 @@ class CompanySerializer(serializers.ModelSerializer):
     class Meta:
         model = Company
         fields = [
-            'id',        
+            'id',
             'code',
             'name',
             'specifications'
@@ -51,6 +51,13 @@ class CompanySerializer(serializers.ModelSerializer):
         """Проверка длины кода (2.2.6.2)"""
         if not (2 <= len(value) <= 4):
             raise serializers.ValidationError("Код компании должен содержать от 2 до 4 символов.")
+        
+        qs = Company.objects.filter(code=value)
+        if self.instance:
+            qs = qs.exclude(pk=self.instance.pk)
+        if qs.exists():
+            raise serializers.ValidationError("Компания с таким кодом уже существует.")
+        
         return value.upper()
     
 

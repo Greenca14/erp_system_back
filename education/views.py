@@ -299,9 +299,9 @@ class XMLUploadView(APIView):
                          description='ID объекта'),
     ],
     responses={
-        200: ('XML файл', 'application/xml'),
-        400: 'Неверный тип модели',
-        404: 'Объект не найден',
+        200: None,
+        400: None,
+        404: None,
     }
 )
 class XMLExportView(GenericAPIView):
