@@ -5,6 +5,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import viewsets, status
 from rest_framework.generics import GenericAPIView
 from rest_framework import viewsets, status, filters
+from rest_framework.pagination import PageNumberPagination
 from .models import *
 from .serializers import *
 from rest_framework.views import APIView
@@ -16,12 +17,19 @@ from django.http import HttpResponse
 from datetime import timedelta
 from django.db.models import Min, Max, Avg
 
+class StandardSetPagination(PageNumberPagination):
+    page_size = 10
+    page_size_query_param = 'per_page'
+    max_page_size = 100
+
+
 @extend_schema(
     tags=['Участник обучения - Employee']
 )
 class EmployeeViewSet(viewsets.ModelViewSet):
     queryset = Employee.objects.all().select_related('company')
     serializer_class = EmployeeSerializer
+    pagination_class = StandardSetPagination
 
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
     search_fields = ['full_name', 'email']
@@ -33,6 +41,7 @@ class EmployeeViewSet(viewsets.ModelViewSet):
 class CourseViewSet(viewsets.ModelViewSet):
     queryset = Course.objects.all()
     serializer_class = CourseSerializer
+    pagination_class = StandardSetPagination
 
     filter_backends = [filters.SearchFilter]
     search_fields = ['title']
@@ -43,7 +52,8 @@ class CourseViewSet(viewsets.ModelViewSet):
 class CompanyViewSet(viewsets.ModelViewSet):
     queryset = Company.objects.all()
     serializer_class = CompanySerializer
-
+    pagination_class = StandardSetPagination
+    
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
     search_fields = ['name', 'code']
     ordering_fields = ['id', 'name', 'code']
@@ -55,7 +65,8 @@ class CompanyViewSet(viewsets.ModelViewSet):
 class SpecificationViewSet(viewsets.ModelViewSet):
     queryset = Specification.objects.all().select_related('company')
     serializer_class = SpecificationSerializer
-    
+    pagination_class = StandardSetPagination
+
     filter_backends = [filters.SearchFilter, filters.OrderingFilter, DjangoFilterBackend]
     filterset_fields = ['company', 'date']
     search_fields = ['number', 'company__name']
@@ -68,6 +79,7 @@ class SpecificationViewSet(viewsets.ModelViewSet):
 class GroupViewSet(viewsets.ModelViewSet):
     queryset = Group.objects.all().select_related('course').select_related('specification')
     serializer_class = GroupSerializer
+    pagination_class = StandardSetPagination
 
     filter_backends = [filters.SearchFilter, filters.OrderingFilter, DjangoFilterBackend]
     filterset_fields = ['status', 'course', 'specification']
