@@ -14,7 +14,7 @@ class SimpleGroupSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Group
-        fields = ['id', 'course_title', 'start_date', 'end_date', 'status']
+        fields = ['id', 'course_title', 'start_date', 'end_date', 'status', 'average_progress']
 
 
 class SimpleEmployeeSerializer(serializers.ModelSerializer):
@@ -172,6 +172,10 @@ class EmployeeSerializer(serializers.ModelSerializer):
 
 
 class SpecificationSerializer(serializers.ModelSerializer):
+    number = serializers.CharField(
+        read_only=True, help_text='Номер спецификации', required=False
+    )
+
     company = SimpleCompanySerializer(read_only=True, help_text='Компания')
     groups = SimpleGroupSerializer(many=True, read_only=True, help_text='Группа')
     
