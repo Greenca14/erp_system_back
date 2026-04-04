@@ -27,7 +27,16 @@ class StandardSetPagination(PageNumberPagination):
 
 
 @extend_schema(
-    tags=['Участник обучения - Employee']
+    tags=['Участник обучения - Employee'],
+    responses={
+        200: EmployeeSerializer,
+        400: inline_serializer(
+            name='ValidationErrors',
+            fields={
+                'non_field_errors': serializers.ListField(child=serializers.CharField()),
+            }
+        )
+    }
 )
 class EmployeeViewSet(viewsets.ModelViewSet):
     queryset = Employee.objects.all().select_related('company')

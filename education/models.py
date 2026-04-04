@@ -129,6 +129,13 @@ class Employee(models.Model):
         verbose_name = "Участник обучения"
         verbose_name_plural = "Участники обучения"
         ordering = ['id']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['company', 'full_name'],
+                name='unique_employee_per_company',
+                violation_error_message="Сотрудник с таким ФИО уже состоит в этой компании."
+            )
+        ]
 
     def __str__(self):
         return self.full_name

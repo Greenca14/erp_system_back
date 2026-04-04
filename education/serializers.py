@@ -1,6 +1,7 @@
 from typing import Any, Dict, List
 
 from rest_framework import serializers
+from django.db import IntegrityError
 from .models import Employee, Company, Course, Specification, Group, GroupEmployee
 
 class SimpleSpecificationSerializer(serializers.ModelSerializer):
@@ -178,7 +179,16 @@ class EmployeeSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         group_ids = validated_data.pop('assign_to_groups', [])
-        employee = Employee.objects.create(**validated_data)
+
+        try:
+            employee = Employee.objects.create(**validated_data)
+        except IntegrityError as e:
+            if 'unique_employee_per_company' in str(e):
+                raise serializers.ValidationError(
+                    {None: Employee._meta.constraints[0].violation_error_message}
+                )
+            raise e
+        
         
         if group_ids is not None:
             self._handle_group_assignments(employee, group_ids)
