@@ -11,7 +11,8 @@
 * **API:** `Django REST Framework (DRF)`
 * **Документация:** `drf-spectacular` (Swagger)
 * **База данных:** `SQLite` (для локальной разработки)
-* **Интеграция:** XML парсинг (Global ERP)
+* **XML интеграция:** `lxml` (с асинхронной обработкой)
+* **Контейнеризация:** `docker-compose`
 
 ---
 
@@ -22,41 +23,41 @@
 
 ```bash
 # Клонирование репозитория
-git clone <ссылка_на_репозиторий>
-cd erp_system_back
+$ git clone https://github.com/Greenca14/erp_system_back.git
+$ cd erp_system_back
 
-# Настройка виртуального окружения
-python -m venv venv
-
-# Активация окружения (Windows)
-.\venv\Scripts\activate
-
-# Активация окружения (Linux/Mac)
-source venv/bin/activate
-
-# Установка зависимостей
-pip install -r requirements.txt
+# Копирование файла со стандартными переменными окружения
+# (при необходимости можно изменять переменные)
+$ cp .env.example .env
 ```
 
-### 2. База данных и наполнение
+### 2. Настройка Docker контейнеров
+
+```Bash
+$ docker-compose up -d redis api
+
+# Проверка работоспособности контейнеров (State должен быть Up)
+$ docker-compose ps
+```
+
+### 3. База данных и наполнение
 
 Примечание: По умолчанию используется SQLite. База данных создастся автоматически в виде файла db.sqlite3 после выполнения миграций.
 
 ```Bash
 # Создание структуры таблиц
-python manage.py migrate
+$ docker exec -it erp_backend python manage.py migrate
 
 # Заполнение базы тестовыми данными (Сидеры)
-python manage.py seed_db
+$ docker exec -it erp_backend python manage.py seed_db
 ```
 
-### 3. Запуск сервера
+### END. Остановка приложения
 
 ```Bash
-python manage.py runserver
+# Если не выполнить остановку, контейнеры будут всегда запущены в фоне
+$ docker-compose down
 ```
-
-API будет доступно по адресу: http://127.0.0.1:8000/
 
 ---
 
@@ -66,4 +67,4 @@ API будет доступно по адресу: http://127.0.0.1:8000/
 
 Swagger UI: http://127.0.0.1:8000/api/v1/swagger/
 
-Схема (JSON/YAML): http://127.0.0.1:8000/api/v1/
+Схема OpenAPI 3.0 (YAML): http://127.0.0.1:8000/api/v1/schema/
