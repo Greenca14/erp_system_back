@@ -32,7 +32,7 @@ python -m venv venv
 .\venv\Scripts\activate
 
 # Активация окружения (Linux/Mac)
-# source venv/bin/activate
+source venv/bin/activate
 
 # Установка зависимостей
 pip install -r requirements.txt
