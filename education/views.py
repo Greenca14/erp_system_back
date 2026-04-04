@@ -127,7 +127,26 @@ class GroupEmployeeViewSet(viewsets.ModelViewSet):
         })
 
     @extend_schema(
-        description='Добавить пользователей в группу'
+        description='Добавить пользователей в группу',
+        request=inline_serializer(
+            name='AddEmployeesRequest',
+            fields={
+                'employee_ids': serializers.ListField(child=serializers.IntegerField()),
+            }
+        ),
+        responses={
+            201: inline_serializer(
+                name='AddEmployeesResponse',
+                fields={
+                    'created': serializers.ListField(child=serializers.IntegerField()),
+                    'errors': serializers.ListField(child=serializers.CharField()),
+                }
+            ),
+            400: inline_serializer(
+                name='BadRequestResponse',
+                fields={'error': serializers.CharField()}
+            ),
+        }
     )
     def create(self, request, *args, **kwargs):
         group_id = self.kwargs.get('group_id')
@@ -159,7 +178,17 @@ class GroupEmployeeViewSet(viewsets.ModelViewSet):
         )
 
     @extend_schema(
-        description='Обновить прогресс пользователя'
+        description='Обновить прогресс пользователя',
+        request=inline_serializer(
+            name='UpdateProgressRequest',
+            fields={
+                'progress_percent': serializers.IntegerField()
+            }
+        ),
+        responses={
+            200: GroupEmployeeSerializer(),
+            404: None,
+        }
     )
     def partial_update(self, request, *args, **kwargs):
         membership = self.get_object()
@@ -284,7 +313,7 @@ class GanttChartDataView(APIView):
         min_date = aggr['first_start'] - timedelta(days=3) if aggr['first_start'] else None
         max_date = aggr['last_end'] + timedelta(days=3) if aggr['last_end'] else None
 
-        serializer = GroupSerializer(groups_qs, many=True)
+        serializer = SimpleGroupSerializer(groups_qs, many=True)
 
         return Response({
             "min_date": min_date,

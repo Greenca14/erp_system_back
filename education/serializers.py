@@ -99,7 +99,8 @@ class GroupSerializer(serializers.ModelSerializer):
             'average_progress',
         ]
         extra_kwargs = {
-            'price_at_creation': {'default': 0, 'read_only': True}
+            'price_at_creation': {'default': 0, 'read_only': True},
+            'total_cost': {'default': 0, 'read_only': True},
         }
 
 

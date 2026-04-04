@@ -32,9 +32,8 @@ class Command(BaseCommand):
         for model in models_to_clear:
             table_name = model._meta.db_table
 
-            if db_vendor == 'postgresql':
+            if db_vendor == 'sqlite':
                 with connection.cursor() as cursor:
-                    seq_name = f"{table_name}_{model._meta.pk.column}_seq"
-                    cursor.execute(f"ALTER SEQUENCE {seq_name} RESTART WITH 1")
+                    cursor.execute(f"DELETE FROM sqlite_sequence WHERE name = %s", [table_name])
             else:
-                self.stdout.write(f"Сброс автоинкремента индексов не удался, доступно только для СУБД Postgres.")
+                self.stdout.write(f"Сброс автоинкремента индексов не удался, доступно только для СУБД Sqlite.")
