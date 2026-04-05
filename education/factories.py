@@ -29,10 +29,8 @@ class CourseFactory(DjangoModelFactory):
 class SpecificationFactory(DjangoModelFactory):
     class Meta:
         model = Specification
-        django_get_or_create = ('number',)
 
     date = factory.Faker('date_this_year')
-    number = factory.Sequence(lambda n: f"SP-{n:04d}") 
     company = factory.SubFactory(CompanyFactory)
 
 
