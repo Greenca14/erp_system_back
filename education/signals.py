@@ -10,7 +10,6 @@ def invalidate_employee_cache(sender, instance, **kwargs):
 @receiver([post_save, post_delete], sender=Course)
 def invalidate_course_cache(sender, instance, **kwargs):
   cache.delete_pattern('*course_list*')
-  cache.delete_pattern('*gantt_data*')
 
 @receiver([post_save, post_delete], sender=Company)
 def invalidate_company_cache(sender, instance, **kwargs):
@@ -23,3 +22,4 @@ def invalidate_specification_cache(sender, instance, **kwargs):
 @receiver([post_save, post_delete], sender=Group)
 def invalidate_group_cache(sender, instance, **kwargs):
   cache.delete_pattern('*group_list*')
+  cache.delete_pattern('*gantt_data*')

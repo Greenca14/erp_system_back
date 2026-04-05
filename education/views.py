@@ -47,10 +47,6 @@ class EmployeeViewSet(viewsets.ModelViewSet):
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
     search_fields = ['full_name', 'email']
     ordering_fields = ['id', 'full_name']
-
-    # @method_decorator(cache_page(60 * 15, key_prefix='employee_list'))
-    # def list(self, request, *args, **kwargs):
-    #     return super().list(request, *args, **kwargs)
     
     def list(self, request, *args, **kwargs):
         cache_key = f"employee_list:{request.get_full_path()}"
@@ -78,10 +74,6 @@ class CourseViewSet(viewsets.ModelViewSet):
     filter_backends = [filters.SearchFilter]
     search_fields = ['title']
 
-    # @method_decorator(cache_page(60 * 15, key_prefix='course_list'))
-    # def list(self, request, *args, **kwargs):
-    #     return super().list(request, *args, **kwargs)
-
     def list(self, request, *args, **kwargs):
         cache_key = f"course_list:{request.get_full_path()}"
         cached_data = cache.get(cache_key)
@@ -108,10 +100,6 @@ class CompanyViewSet(viewsets.ModelViewSet):
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
     search_fields = ['name', 'code']
     ordering_fields = ['id', 'name', 'code']
-
-    # @method_decorator(cache_page(60 * 15, key_prefix='company_list'))
-    # def list(self, request, *args, **kwargs):
-    #     return super().list(request, *args, **kwargs)
 
     def list(self, request, *args, **kwargs):
         cache_key = f"company_list:{request.get_full_path()}"
@@ -142,10 +130,6 @@ class SpecificationViewSet(viewsets.ModelViewSet):
     search_fields = ['number', 'company__name']
     ordering_fields = ['id', 'date', 'number', 'total_with_vat']
 
-    # @method_decorator(cache_page(60 * 15, key_prefix='specification_list'))
-    # def list(self, request, *args, **kwargs):
-    #     return super().list(request, *args, **kwargs)
-
     def list(self, request, *args, **kwargs):
         cache_key = f"specification_list:{request.get_full_path()}"
         cached_data = cache.get(cache_key)
@@ -174,10 +158,6 @@ class GroupViewSet(viewsets.ModelViewSet):
     filterset_fields = ['status', 'course', 'specification']
     search_fields = ['course__title', 'specification__number']
     ordering_fields = ['id', 'start_date', 'end_date', 'status', 'average_progress']
-
-    # @method_decorator(cache_page(60 * 15, key_prefix='group_list'))
-    # def list(self, request, *args, **kwargs):
-    #     return super().list(request, *args, **kwargs)
 
     def list(self, request, *args, **kwargs):
         cache_key = f"group_list:{request.get_full_path()}"
@@ -426,33 +406,47 @@ class XMLExportView(GenericAPIView):
         )
     }
 )
-class GanttChartDataView(APIView):
-    @method_decorator(cache_page(60 * 30, key_prefix='gantt_data'))
+class GanttChartDataView(APIView): 
     def get(self, request):
-        groups_qs = Group.objects.all()
+        cache_key = f"gantt_data:{request.get_full_path()}"
+        cached_data = cache.get(cache_key)
+
+        if cached_data is not None:
+            response = Response(cached_data)
+        else:
+            groups_qs = Group.objects.all()
+            
+            if groups_qs.exists():
+                aggr = groups_qs.aggregate(
+                    first_start=Min('start_date'),
+                    last_end=Max('end_date')
+                )
+
+                min_date = aggr['first_start'] - timedelta(days=3) if aggr['first_start'] else None
+                max_date = aggr['last_end'] + timedelta(days=3) if aggr['last_end'] else None
+
+                serializer = SimpleGroupSerializerWithMembers(groups_qs, many=True)
+
+                response = Response({
+                    "min_date": min_date,
+                    "max_date": max_date,
+                    "groups": serializer.data
+                })
+            else:
+                response = Response({
+                    "min_date": None,
+                    "max_date": None,
+                    "groups": []
+                })
+            
+
+            cache.set(cache_key, response.data, 60 * 15)
         
-        if not groups_qs.exists():
-            return Response({
-                "min_date": None,
-                "max_date": None,
-                "groups": []
-            })
+        response['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+        response['Pragma'] = 'no-cache'
+        response['Expires'] = '0'
 
-        aggr = groups_qs.aggregate(
-            first_start=Min('start_date'),
-            last_end=Max('end_date')
-        )
-
-        min_date = aggr['first_start'] - timedelta(days=3) if aggr['first_start'] else None
-        max_date = aggr['last_end'] + timedelta(days=3) if aggr['last_end'] else None
-
-        serializer = SimpleGroupSerializerWithMembers(groups_qs, many=True)
-
-        return Response({
-            "min_date": min_date,
-            "max_date": max_date,
-            "groups": serializer.data
-        })
+        return response
     
 
 @extend_schema(
@@ -472,27 +466,39 @@ class GanttChartDataView(APIView):
     }
 )
 class StatsView(APIView):
-    @method_decorator(cache_page(60 * 15, key_prefix='stats'))
     def get(self, request):
-        active_groups = Group.objects.filter(status='in_progress')
-        active_groups_count = active_groups.count()
+        cache_key = f"stats:{request.get_full_path()}"
+        cached_data = cache.get(cache_key)
 
-        study_budget = active_groups.aggregate(total=Sum('total_cost'))['total'] or 0
+        if cached_data is not None:
+            response = Response(cached_data)
+        else:
+            active_groups = Group.objects.filter(status='in_progress')
+            active_groups_count = active_groups.count()
 
-        avg_progress = GroupEmployee.objects.filter(
-            group__status='in_progress'
-        ).aggregate(avg=Avg('progress_percent'))['avg'] or 0.0
-   
-        active_employees_count = GroupEmployee.objects.filter(
-            group__status='in_progress'
-        ).values('employee').distinct().count()
+            study_budget = active_groups.aggregate(total=Sum('total_cost'))['total'] or 0
+
+            avg_progress = GroupEmployee.objects.filter(
+                group__status='in_progress'
+            ).aggregate(avg=Avg('progress_percent'))['avg'] or 0.0
+    
+            active_employees_count = GroupEmployee.objects.filter(
+                group__status='in_progress'
+            ).values('employee').distinct().count()
+
+            response = Response({
+                'active_groups': active_groups_count,
+                'study_budget': study_budget,
+                'average_progress': round(avg_progress, 2),
+                'active_employees': active_employees_count,
+            })
+            cache.set(cache_key, response.data, 60 * 30)
+
+        response['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+        response['Pragma'] = 'no-cache'
+        response['Expires'] = '0'
         
-        return Response({
-            'active_groups': active_groups_count,
-            'study_budget': study_budget,
-            'average_progress': round(avg_progress, 2),
-            'active_employees': active_employees_count,
-        })
+        return response
 
 
 @extend_schema(
