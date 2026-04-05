@@ -29,4 +29,5 @@ def invalidate_group_cache(sender, instance, **kwargs):
 def invalidate_group_cache(sender, instance, **kwargs):
   cache.delete_pattern('*group_list*')
   cache.delete_pattern('*employee_list*')
-
+  group = instance.group
+  group.save()
