@@ -44,7 +44,8 @@ class EmployeeViewSet(viewsets.ModelViewSet):
     serializer_class = EmployeeSerializer
     pagination_class = StandardSetPagination
 
-    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_fields = ['company']
     search_fields = ['full_name', 'email']
     ordering_fields = ['id', 'full_name']
     

@@ -55,6 +55,9 @@ class CompanySerializer(serializers.ModelSerializer):
     specifications = SimpleSpecificationSerializer(
         read_only=True, many=True, help_text='Спецификации компании'
     )
+    employees = SimpleEmployeeSerializer(
+        read_only=True, many=True, help_text='Сотрудники компании'
+    )
 
     class Meta:
         model = Company
@@ -62,7 +65,8 @@ class CompanySerializer(serializers.ModelSerializer):
             'id',
             'code',
             'name',
-            'specifications'
+            'specifications',
+            'employees',
         ]
 
     def validate_code(self, value):

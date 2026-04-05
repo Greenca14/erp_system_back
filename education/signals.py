@@ -22,4 +22,5 @@ def invalidate_specification_cache(sender, instance, **kwargs):
 @receiver([post_save, post_delete], sender=Group)
 def invalidate_group_cache(sender, instance, **kwargs):
   cache.delete_pattern('*group_list*')
+  cache.delete_pattern('*specification_list*')
   cache.delete_pattern('*gantt_data*')
