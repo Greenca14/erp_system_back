@@ -162,6 +162,7 @@ class GroupSerializer(serializers.ModelSerializer):
 
         if employee_ids is not None:
             self._handle_group_assignments(group, employee_ids)
+            group.save()
         
         return group
 
