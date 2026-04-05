@@ -106,6 +106,10 @@ class GroupSerializer(serializers.ModelSerializer):
         queryset=Specification.objects.all(), write_only=True, source='specification',
         help_text='ID спецификации'
     )
+    employee_ids = serializers.ListField(
+        child=serializers.IntegerField(), write_only=True, required=False,
+        help_text='Список ID работников, которые будут добавлены в группу после обновления/добавления записи'
+    )
 
     class Meta:
         model = Group
@@ -122,11 +126,44 @@ class GroupSerializer(serializers.ModelSerializer):
             'total_cost',
             'employees_count',
             'average_progress',
+            'employee_ids',
         ]
         extra_kwargs = {
             'price_at_creation': {'default': 0, 'read_only': True},
             'total_cost': {'default': 0, 'read_only': True},
         }
+    
+    def _handle_group_assignments(self, group, employee_ids):
+        if not employee_ids:
+            return
+        for employee_id in employee_ids:
+            try:
+                employee = Employee.objects.get(id=employee_id)
+                GroupEmployee.objects.get_or_create(
+                    employee=employee,
+                    group=group,
+                )
+            except Employee.DoesNotExist:
+                print(f"Сотрудник с ID {employee_id} не найден.")
+    
+    def create(self, validated_data):
+        employee_ids = validated_data.pop('employee_ids', [])
+        group = Group.objects.create(**validated_data)
+        
+        if employee_ids is not None:
+            self._handle_group_assignments(group, employee_ids)
+            group.save()
+        
+        return group
+
+    def update(self, instance, validated_data):
+        employee_ids = validated_data.pop('employee_ids', [])
+        group = super().update(instance, validated_data)
+
+        if employee_ids is not None:
+            self._handle_group_assignments(group, employee_ids)
+        
+        return group
 
 
 class EmployeeSerializer(serializers.ModelSerializer):
